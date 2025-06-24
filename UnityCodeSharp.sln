@@ -8,6 +8,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Debugging", "Mono\Mono
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Debugger.Soft", "Mono\Mono.Debugger.Soft\Mono.Debugger.Soft.csproj", "{B2FB0507-7BBB-472A-97E4-A7E3A54913C4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotRush.Roslyn.Server", "DotRush\src\DotRush.Roslyn.Server\DotRush.Roslyn.Server.csproj", "{0A43E676-D678-4CE7-AB51-A5ABBF0BDCB1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotRush.Common", "DotRush\src\DotRush.Common\DotRush.Common.csproj", "{462EE407-DAEB-4965-8A84-BF2CAB1897C7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +34,13 @@ Global
 		{B2FB0507-7BBB-472A-97E4-A7E3A54913C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2FB0507-7BBB-472A-97E4-A7E3A54913C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2FB0507-7BBB-472A-97E4-A7E3A54913C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A43E676-D678-4CE7-AB51-A5ABBF0BDCB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A43E676-D678-4CE7-AB51-A5ABBF0BDCB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A43E676-D678-4CE7-AB51-A5ABBF0BDCB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A43E676-D678-4CE7-AB51-A5ABBF0BDCB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{462EE407-DAEB-4965-8A84-BF2CAB1897C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{462EE407-DAEB-4965-8A84-BF2CAB1897C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{462EE407-DAEB-4965-8A84-BF2CAB1897C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{462EE407-DAEB-4965-8A84-BF2CAB1897C7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

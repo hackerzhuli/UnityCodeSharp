@@ -1,3 +1,6 @@
 [submodule "Mono"]
 	path = Mono
 	url = git@github.com:hackerzhuli/debugger-libs.git
+[submodule "DotRush"]
+	path = DotRush
+	url = git@github.com:hackerzhuli/DotRush.git

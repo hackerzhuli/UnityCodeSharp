@@ -7,6 +7,7 @@ C# Version: 12.0
 ## Code Guidelines
 - Remember to write xml docs for public members and the classes themselves
 - Use var instead of explicit types if types can be infered
+- Don't use #region
 
 ## How our debugger works
 Core Dependencies:

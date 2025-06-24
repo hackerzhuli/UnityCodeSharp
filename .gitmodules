@@ -1,0 +1,3 @@
+[submodule "Mono"]
+	path = Mono
+	url = git@github.com:hackerzhuli/debugger-libs.git

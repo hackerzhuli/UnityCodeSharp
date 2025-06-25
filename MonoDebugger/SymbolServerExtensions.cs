@@ -4,9 +4,19 @@ using Mono.Debugging.Client;
 
 namespace MonoDebugger;
 
+/// <summary>
+/// Extension methods and utilities for symbol server operations and source link functionality.
+/// </summary>
 public static class SymbolServerExtensions
 {
+    /// <summary>
+    /// The Microsoft symbol server address for downloading debug symbols.
+    /// </summary>
     public const string MicrosoftSymbolServerAddress = "https://msdl.microsoft.com/download/symbols";
+    
+    /// <summary>
+    /// The NuGet symbol server address for downloading debug symbols.
+    /// </summary>
     public const string NuGetSymbolServerAddress = "https://symbols.nuget.org/download/symbols";
 
     private static readonly HttpClient httpClient;
@@ -19,11 +29,20 @@ public static class SymbolServerExtensions
         symbolsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "symbols");
     }
 
+    /// <summary>
+    /// Sets the event logger for symbol server operations.
+    /// </summary>
+    /// <param name="logger">The action to use for logging events.</param>
     public static void SetEventLogger(Action<string> logger)
     {
         eventLogger = logger;
     }
 
+    /// <summary>
+    /// Downloads a source file from the specified URI using source link.
+    /// </summary>
+    /// <param name="uri">The URI of the source file to download.</param>
+    /// <returns>The content of the source file, or null if download failed.</returns>
     public static string? DownloadSourceFile(string uri)
     {
         if (!Uri.TryCreate(uri, UriKind.Absolute, out var sourceLinkUri))
@@ -35,6 +54,13 @@ public static class SymbolServerExtensions
         return GetFileContentAsync(uri).Result;
     }
 
+    /// <summary>
+    /// Downloads debug symbols for an assembly from a symbol server.
+    /// </summary>
+    /// <param name="assemblyPath">The path to the assembly file.</param>
+    /// <param name="assemblyName">The name of the assembly.</param>
+    /// <param name="serverAddress">The symbol server address to download from.</param>
+    /// <returns>The path to the downloaded PDB file, or null if download failed.</returns>
     public static string? DownloadSourceSymbols(string assemblyPath, string assemblyName, string serverAddress)
     {
         var pdbData = GetPdbData(assemblyPath);
@@ -56,6 +82,12 @@ public static class SymbolServerExtensions
         return null;
     }
 
+    /// <summary>
+    /// Checks if debug symbols are available for an assembly, either locally or on symbol servers.
+    /// </summary>
+    /// <param name="assemblyPath">The path to the assembly file.</param>
+    /// <param name="inludeSymbolServers">Whether to check symbol servers in addition to local files.</param>
+    /// <returns>True if debug symbols are available, otherwise false.</returns>
     public static bool HasDebugSymbols(string assemblyPath, bool inludeSymbolServers)
     {
         var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
@@ -72,6 +104,12 @@ public static class SymbolServerExtensions
         return File.Exists(pdbPath);
     }
 
+    /// <summary>
+    /// Searches for debug symbols in the specified search paths.
+    /// </summary>
+    /// <param name="searchPaths">The collection of paths to search for symbol files.</param>
+    /// <param name="assemblyPath">The path to the assembly file.</param>
+    /// <returns>The path to the found PDB file, or null if not found.</returns>
     public static string? SearchSymbols(IEnumerable<string> searchPaths, string assemblyPath)
     {
         var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");

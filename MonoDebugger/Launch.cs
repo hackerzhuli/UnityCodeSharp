@@ -1,7 +1,6 @@
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
-using DotRush.Common.Extensions;
 using DotRush.Common.MSBuild;
 using Mono.Debugging.Soft;
 
@@ -179,8 +178,17 @@ public class Launch
         if (!File.Exists(editorInfo))
             throw ServerExtensions.GetProtocolException($"EditorInstance.json not found: '{editorInfo}'");
 
-        var editorInstance =
-            SafeExtensions.Invoke(() => JsonSerializer.Deserialize<EditorInstance>(File.ReadAllText(editorInfo)));
+        EditorInstance? editorInstance;
+        try
+        {
+            editorInstance = JsonSerializer.Deserialize<EditorInstance>(File.ReadAllText(editorInfo));
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e.Message);
+            editorInstance = null;
+        }
+
         if (editorInstance == null)
             throw ServerExtensions.GetProtocolException($"Failed to deserialize EditorInstance.json: '{editorInfo}'");
 

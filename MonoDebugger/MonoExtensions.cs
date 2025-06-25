@@ -5,8 +5,17 @@ using Mono.Debugging.Soft;
 
 namespace MonoDebugger;
 
+/// <summary>
+/// Extension methods for Mono debugging types to provide additional functionality.
+/// </summary>
 public static class MonoExtensions
 {
+    /// <summary>
+    /// Converts a thread name and ID to a display-friendly thread name.
+    /// </summary>
+    /// <param name="threadName">The original thread name.</param>
+    /// <param name="threadId">The thread ID.</param>
+    /// <returns>A formatted thread name, defaulting to "Main Thread" for thread 1 or "Thread #ID" for others.</returns>
     public static string ToThreadName(this string threadName, int threadId)
     {
         if (!string.IsNullOrEmpty(threadName))
@@ -16,6 +25,11 @@ public static class MonoExtensions
         return $"Thread #{threadId}";
     }
 
+    /// <summary>
+    /// Converts an ObjectValue to a display-friendly string representation.
+    /// </summary>
+    /// <param name="value">The ObjectValue to convert.</param>
+    /// <returns>A formatted display value with braces removed and newlines replaced with spaces.</returns>
     public static string ToDisplayValue(this ObjectValue value)
     {
         var dv = value.DisplayValue ?? "<error getting value>";
@@ -24,6 +38,12 @@ public static class MonoExtensions
         return dv;
     }
 
+    /// <summary>
+    /// Safely retrieves a stack frame from a backtrace, handling exceptions gracefully.
+    /// </summary>
+    /// <param name="bt">The backtrace to get the frame from.</param>
+    /// <param name="n">The frame index to retrieve.</param>
+    /// <returns>The stack frame at the specified index, or null if an error occurred.</returns>
     public static StackFrame? GetFrameSafe(this Backtrace bt, int n)
     {
         try
@@ -37,6 +57,11 @@ public static class MonoExtensions
         }
     }
 
+    /// <summary>
+    /// Gets the disassembled IL code for a stack frame.
+    /// </summary>
+    /// <param name="frame">The stack frame to disassemble.</param>
+    /// <returns>A formatted string containing the IL assembly code with addresses and source line numbers.</returns>
     public static string GetAssemblyCode(this StackFrame frame)
     {
         var assemblyLines = frame.Disassemble(-1, -1);

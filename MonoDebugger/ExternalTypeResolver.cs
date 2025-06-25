@@ -4,36 +4,46 @@ using StreamJsonRpc;
 
 namespace MonoDebugger;
 
-public class ExternalTypeResolver : IDisposable {
+public class ExternalTypeResolver : IDisposable
+{
     private readonly NamedPipeClientStream? transportStream;
     private JsonRpc? rpcServer;
 
-    public ExternalTypeResolver(string? transportId) {
+    public ExternalTypeResolver(string? transportId)
+    {
         if (!string.IsNullOrEmpty(transportId))
-            transportStream = new NamedPipeClientStream(".", transportId, PipeDirection.InOut, PipeOptions.Asynchronous);
+            transportStream =
+                new NamedPipeClientStream(".", transportId, PipeDirection.InOut, PipeOptions.Asynchronous);
     }
 
-    public bool TryConnect(int timeoutMs = 5000) {
+    public void Dispose()
+    {
+        rpcServer?.Dispose();
+        transportStream?.Dispose();
+    }
+
+    public bool TryConnect(int timeoutMs = 5000)
+    {
         if (transportStream == null)
             return false;
 
-        try {
+        try
+        {
             transportStream.Connect(timeoutMs);
             rpcServer = JsonRpc.Attach(transportStream);
             DebuggerLoggingService.CustomLogger?.LogMessage("Debugger connected to external type resolver");
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             DebuggerLoggingService.CustomLogger?.LogMessage($"Failed to connect to external type resolver: {e}");
             return false;
         }
 
         return true;
     }
-    public string? Resolve(string identifierName, SourceLocation location) {
-        return rpcServer?.InvokeAsync<string>("HandleResolveType", identifierName, location)?.Result;
-    }
 
-    public void Dispose() {
-        rpcServer?.Dispose();
-        transportStream?.Dispose();
+    public string? Resolve(string identifierName, SourceLocation location)
+    {
+        return rpcServer?.InvokeAsync<string>("HandleResolveType", identifierName, location)?.Result;
     }
 }

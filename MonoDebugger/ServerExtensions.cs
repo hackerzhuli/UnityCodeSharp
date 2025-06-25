@@ -10,9 +10,12 @@ using DebugProtocol = Microsoft.VisualStudio.Shared.VSCodeDebugProtocol.Messages
 
 namespace MonoDebugger;
 
-public static class ServerExtensions {
-    public static DebugOptions DefaultDebuggerOptions { get; } = new DebugOptions {
-        EvaluationOptions = new EvaluationOptions {
+public static class ServerExtensions
+{
+    public static DebugOptions DefaultDebuggerOptions { get; } = new()
+    {
+        EvaluationOptions = new EvaluationOptions
+        {
             EvaluationTimeout = 1000,
             MemberEvaluationTimeout = 5000,
             UseExternalTypeResolver = true,
@@ -29,33 +32,44 @@ public static class ServerExtensions {
         },
         ProjectAssembliesOnly = true
     };
-    
-    public static JsonSerializerOptions SerializerOptions { get; } = new JsonSerializerOptions {
+
+    public static JsonSerializerOptions SerializerOptions { get; } = new()
+    {
         Converters = { new JsonStringEnumConverter() },
-        PropertyNameCaseInsensitive = true,
+        PropertyNameCaseInsensitive = true
     };
-    
-    public static ProtocolException GetProtocolException(string message) {
+
+    public static ProtocolException GetProtocolException(string message)
+    {
         return new ProtocolException(message, 0, message);
     }
-    
-    public static int GetSourceReference(this StackFrame frame) {
+
+    public static int GetSourceReference(this StackFrame frame)
+    {
         var key = frame.SourceLocation.MethodName ?? "null";
-        if (!string.IsNullOrEmpty(frame.SourceLocation.FileName)) {
+        if (!string.IsNullOrEmpty(frame.SourceLocation.FileName))
+        {
             key = frame.SourceLocation.FileName;
             if (frame.SourceLocation.FileName.Contains(".g.cs", StringComparison.OrdinalIgnoreCase))
                 key = $"{frame.SourceLocation.FileName}:{frame.SourceLocation.Line}";
         }
+
         return Math.Abs(key.GetHashCode());
     }
-    public static string? TrimExpression(this DebugProtocol.EvaluateArguments args) {
+
+    public static string? TrimExpression(this DebugProtocol.EvaluateArguments args)
+    {
         return args.Expression?.TrimEnd(';')?.Replace("?.", ".");
     }
 
-    public static T DoSafe<T>(Func<T> handler, Action? finalizer = null) {
-        try {
+    public static T DoSafe<T>(Func<T> handler, Action? finalizer = null)
+    {
+        try
+        {
             return handler.Invoke();
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             finalizer?.Invoke();
             if (ex is ProtocolException)
                 throw;
@@ -64,39 +78,49 @@ public static class ServerExtensions {
         }
     }
 
-    public static JToken? TryGetValue(this Dictionary<string, JToken> dictionary, string key) {
+    public static JToken? TryGetValue(this Dictionary<string, JToken> dictionary, string key)
+    {
         if (dictionary.TryGetValue(key, out var value))
             return value;
         return null;
     }
-    public static T? ToClass<T>(this JToken? jtoken) where T : class {
+
+    public static T? ToClass<T>(this JToken? jtoken) where T : class
+    {
         if (jtoken == null)
             return default;
 
-        string json = NewtonConverter.SerializeObject(jtoken);
+        var json = NewtonConverter.SerializeObject(jtoken);
         if (string.IsNullOrEmpty(json))
             return default;
 
         return JsonSerializer.Deserialize<T>(json, SerializerOptions);
     }
-    public static T ToValue<T>(this JToken? jtoken) where T : struct {
+
+    public static T ToValue<T>(this JToken? jtoken) where T : struct
+    {
         if (jtoken == null)
             return default;
 
-        string json = NewtonConverter.SerializeObject(jtoken);
+        var json = NewtonConverter.SerializeObject(jtoken);
         if (string.IsNullOrEmpty(json))
             return default;
 
         return JsonSerializer.Deserialize<T>(json, SerializerOptions);
     }
-    public static DebugProtocol.CompletionItem ToCompletionItem(this CompletionItem item) {
-        return new DebugProtocol.CompletionItem() {
+
+    public static DebugProtocol.CompletionItem ToCompletionItem(this CompletionItem item)
+    {
+        return new DebugProtocol.CompletionItem
+        {
             Type = item.Flags.ToCompletionItemType(),
             SortText = item.Name,
-            Label = item.Name,
+            Label = item.Name
         };
     }
-    private static DebugProtocol.CompletionItemType ToCompletionItemType(this ObjectValueFlags flags) {
+
+    private static DebugProtocol.CompletionItemType ToCompletionItemType(this ObjectValueFlags flags)
+    {
         if (flags.HasFlag(ObjectValueFlags.Method))
             return DebugProtocol.CompletionItemType.Method;
         if (flags.HasFlag(ObjectValueFlags.Field))
@@ -112,17 +136,23 @@ public static class ServerExtensions {
 
         return DebugProtocol.CompletionItemType.Text;
     }
-    public static DebugProtocol.Breakpoint ToBreakpoint(this Breakpoint breakpoint, SoftDebuggerSession session) {
-        return new DebugProtocol.Breakpoint() {
+
+    public static DebugProtocol.Breakpoint ToBreakpoint(this Breakpoint breakpoint, SoftDebuggerSession session)
+    {
+        return new DebugProtocol.Breakpoint
+        {
             Id = breakpoint.GetHashCode(),
             Verified = breakpoint.GetStatus(session) == BreakEventStatus.Bound,
             Message = breakpoint.GetStatusMessage(session),
             Line = breakpoint.Line,
-            Column = breakpoint.Column,
+            Column = breakpoint.Column
         };
     }
-    public static DebugProtocol.Module ToModule(this Assembly assembly) {
-        return new DebugProtocol.Module {
+
+    public static DebugProtocol.Module ToModule(this Assembly assembly)
+    {
+        return new DebugProtocol.Module
+        {
             Id = assembly.Name.GetHashCode(),
             Name = assembly.Name,
             Path = assembly.Path,
@@ -133,45 +163,62 @@ public static class ServerExtensions {
             DateTimeStamp = assembly.TimeStamp,
             AddressRange = assembly.Address,
             SymbolStatus = assembly.SymbolStatus,
-            VsAppDomain = assembly.AppDomain,
+            VsAppDomain = assembly.AppDomain
         };
     }
-    public static DebugProtocol.VSSourceLinkInfo ToSourceLinkInfo(this SourceLink sourceLink) {
-        return new DebugProtocol.VSSourceLinkInfo {
+
+    public static DebugProtocol.VSSourceLinkInfo ToSourceLinkInfo(this SourceLink sourceLink)
+    {
+        return new DebugProtocol.VSSourceLinkInfo
+        {
             Url = sourceLink?.Uri,
-            RelativeFilePath = sourceLink?.RelativeFilePath,
+            RelativeFilePath = sourceLink?.RelativeFilePath
         };
     }
-    public static DebugProtocol.SetVariableResponse ToSetVariableResponse(this DebugProtocol.Variable variable) {
-        return new DebugProtocol.SetVariableResponse {
+
+    public static DebugProtocol.SetVariableResponse ToSetVariableResponse(this DebugProtocol.Variable variable)
+    {
+        return new DebugProtocol.SetVariableResponse
+        {
             Value = variable.Value,
             Type = variable.Type,
             VariablesReference = variable.VariablesReference,
             NamedVariables = variable.NamedVariables,
-            IndexedVariables = variable.IndexedVariables,
+            IndexedVariables = variable.IndexedVariables
         };
     }
-    public static DebugProtocol.GotoTargetsResponse ToJumpToCursorTarget(this DebugProtocol.GotoTargetsArguments args, int id) {
-        return new DebugProtocol.GotoTargetsResponse {
-            Targets = new List<DebugProtocol.GotoTarget>() {
-            new DebugProtocol.GotoTarget {
-                Id = id,
-                Label = "Jump to cursor",
-                Line = args.Line,
-                Column = args.Column,
-                EndLine = 0,
-                EndColumn = 0
+
+    public static DebugProtocol.GotoTargetsResponse ToJumpToCursorTarget(this DebugProtocol.GotoTargetsArguments args,
+        int id)
+    {
+        return new DebugProtocol.GotoTargetsResponse
+        {
+            Targets = new List<DebugProtocol.GotoTarget>
+            {
+                new()
+                {
+                    Id = id,
+                    Label = "Jump to cursor",
+                    Line = args.Line,
+                    Column = args.Column,
+                    EndLine = 0,
+                    EndColumn = 0
+                }
             }
-        }
         };
     }
-    public static DebugProtocol.ExceptionInfoResponse ToExceptionInfoResponse(this ExceptionInfo exeption) {
-        return new DebugProtocol.ExceptionInfoResponse(exeption.Type, DebugProtocol.ExceptionBreakMode.Always) {
+
+    public static DebugProtocol.ExceptionInfoResponse ToExceptionInfoResponse(this ExceptionInfo exeption)
+    {
+        return new DebugProtocol.ExceptionInfoResponse(exeption.Type, DebugProtocol.ExceptionBreakMode.Always)
+        {
             Description = exeption.Message,
-            Details = exeption.ToExceptionDetails(),
+            Details = exeption.ToExceptionDetails()
         };
     }
-    private static DebugProtocol.ExceptionDetails? ToExceptionDetails(this ExceptionInfo? exception) {
+
+    private static DebugProtocol.ExceptionDetails? ToExceptionDetails(this ExceptionInfo? exception)
+    {
         if (exception == null)
             return null;
 
@@ -183,14 +230,18 @@ public static class ServerExtensions {
         if (_innerExceptions != null)
             innerExceptions.AddRange(_innerExceptions.Where(it => it != null));
 
-        return new DebugProtocol.ExceptionDetails {
+        return new DebugProtocol.ExceptionDetails
+        {
             FullTypeName = exception.Type,
             Message = exception.Message,
             InnerException = innerExceptions.Select(it => it.ToExceptionDetails()).ToList(),
-            StackTrace = string.Join('\n', exception.StackTrace?.Select(it => it.ToStackTraceLine()) ?? Array.Empty<string>()),
+            StackTrace = string.Join('\n',
+                exception.StackTrace?.Select(it => it.ToStackTraceLine()) ?? Array.Empty<string>())
         };
     }
-    private static string ToStackTraceLine(this ExceptionStackFrame? frame) {
+
+    private static string ToStackTraceLine(this ExceptionStackFrame? frame)
+    {
         var sb = new StringBuilder();
         if (frame?.DisplayText == null)
             return "<unknown>";

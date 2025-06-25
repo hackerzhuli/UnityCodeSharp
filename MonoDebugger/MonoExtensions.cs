@@ -5,30 +5,40 @@ using Mono.Debugging.Soft;
 
 namespace MonoDebugger;
 
-public static class MonoExtensions {
-    public static string ToThreadName(this string threadName, int threadId) {
+public static class MonoExtensions
+{
+    public static string ToThreadName(this string threadName, int threadId)
+    {
         if (!string.IsNullOrEmpty(threadName))
             return threadName;
         if (threadId == 1)
             return "Main Thread";
         return $"Thread #{threadId}";
     }
-    public static string ToDisplayValue(this ObjectValue value) {
+
+    public static string ToDisplayValue(this ObjectValue value)
+    {
         var dv = value.DisplayValue ?? "<error getting value>";
         if (dv.Length > 1 && dv[0] == '{' && dv[dv.Length - 1] == '}')
             dv = dv.Substring(1, dv.Length - 2).Replace(Environment.NewLine, " ");
         return dv;
     }
 
-    public static StackFrame? GetFrameSafe(this Backtrace bt, int n) {
-        try {
+    public static StackFrame? GetFrameSafe(this Backtrace bt, int n)
+    {
+        try
+        {
             return bt.GetFrame(n);
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             DebuggerLoggingService.CustomLogger?.LogError($"Error while getting frame [{n}]", e);
             return null;
         }
     }
-    public static string GetAssemblyCode(this StackFrame frame) {
+
+    public static string GetAssemblyCode(this StackFrame frame)
+    {
         var assemblyLines = frame.Disassemble(-1, -1);
         var sb = new StringBuilder();
         foreach (var line in assemblyLines)
@@ -36,10 +46,14 @@ public static class MonoExtensions {
 
         return sb.ToString();
     }
-    public static bool HasNullValue(this ObjectValue objectValue) {
+
+    public static bool HasNullValue(this ObjectValue objectValue)
+    {
         return objectValue.Value == "(null)";
     }
-    public static string ResolveValue(this ObjectValue variable, string value) {
+
+    public static string ResolveValue(this ObjectValue variable, string value)
+    {
         var fullName = variable.TypeName;
         if (string.IsNullOrEmpty(fullName))
             return value;
@@ -50,19 +64,24 @@ public static class MonoExtensions {
 
         return value.Replace($"new {shortName}", $"new {fullName}");
     }
-    public static ThreadInfo? FindThread(this SoftDebuggerSession session, long id) {
+
+    public static ThreadInfo? FindThread(this SoftDebuggerSession session, long id)
+    {
         var process = session.GetProcesses().FirstOrDefault();
         if (process == null)
             return null;
 
         return process.GetThreads().FirstOrDefault(it => it.Id == id);
     }
-    public static ExceptionInfo? FindException(this SoftDebuggerSession session, long id) {
+
+    public static ExceptionInfo? FindException(this SoftDebuggerSession session, long id)
+    {
         var thread = session.FindThread(id);
         if (thread == null)
             return null;
 
-        for (int i = 0; i < thread.Backtrace.FrameCount; i++) {
+        for (var i = 0; i < thread.Backtrace.FrameCount; i++)
+        {
             var frame = thread.Backtrace.GetFrameSafe(i);
             var ex = frame?.GetException();
             if (ex != null)
@@ -71,11 +90,14 @@ public static class MonoExtensions {
 
         return null;
     }
-    public static string? RemapSourceLocation(this DebugSession session, SourceLocation location) {
+
+    public static string? RemapSourceLocation(this DebugSession session, SourceLocation location)
+    {
         if (string.IsNullOrEmpty(location.FileName))
             return null;
 
-        foreach (var remap in session.Options.SourceCodeMappings) {
+        foreach (var remap in session.Options.SourceCodeMappings)
+        {
             var filePath = location.FileName.ToPlatformPath();
             var key = remap.Key.ToPlatformPath();
             var value = remap.Value.ToPlatformPath();

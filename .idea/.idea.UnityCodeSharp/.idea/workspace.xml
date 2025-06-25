@@ -9,15 +9,23 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4a738f26-54fb-4b2c-9d67-ceed1b46c50f" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/MonoDebugger/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.UnityCodeSharp/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnityCodeSharp/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Mono" beforeDir="false" afterPath="$PROJECT_DIR$/Mono" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Mono/Mono.Debugger.Soft/Mono.Debugger.Soft.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Mono/Mono.Debugger.Soft/Mono.Debugger.Soft.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Mono/Mono.Debugging.Soft/Mono.Debugging.Soft.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Mono/Mono.Debugging.Soft/Mono.Debugging.Soft.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Mono/Mono.Debugging.settings" beforeDir="false" afterPath="$PROJECT_DIR$/Mono/Mono.Debugging.settings" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Mono/Mono.Debugging/Mono.Debugging.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Mono/Mono.Debugging/Mono.Debugging.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/Debug.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/Debug.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/DebugOptions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/DebugOptions.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/DebugSession.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/DebugSession.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/EditorInstance.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/EditorInstance.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/ExceptionsFilter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/ExceptionsFilter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/ExternalTypeResolver.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/ExternalTypeResolver.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/Launch.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/Launch.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/LaunchConfig.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/LaunchConfig.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MonoDebugger/MonoDebugger.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/MonoDebugger.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnityCodeSharp.sln.DotSettings.user" beforeDir="false" afterPath="$PROJECT_DIR$/UnityCodeSharp.sln.DotSettings.user" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/MonoExtensions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/MonoExtensions.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/ServerExtensions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/ServerExtensions.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/SymbolServerExtensions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/SymbolServerExtensions.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MonoDebugger/Trim.xml" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/Trim.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -143,7 +151,7 @@
       <workItem from="1750777438750" duration="4147000" />
       <workItem from="1750791238083" duration="5649000" />
       <workItem from="1750819383007" duration="4283000" />
-      <workItem from="1750823752719" duration="3080000" />
+      <workItem from="1750823752719" duration="4711000" />
     </task>
     <task id="LOCAL-00001" summary="Added DotRush as submodule">
       <option name="closed" value="true" />

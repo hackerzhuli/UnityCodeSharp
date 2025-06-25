@@ -8,31 +8,24 @@ namespace MonoDebugger;
 /// <summary>
 ///     Handles launch debugging Unity apps.
 /// </summary>
-public class Launch
+/// <remarks>
+///     constructor
+/// </remarks>
+/// <param name="config">The launch configuration</param>
+public class Launch(LaunchConfig config)
 {
-    private readonly ExternalTypeResolver _typeResolver;
+    private readonly ExternalTypeResolver _typeResolver = new ExternalTypeResolver(config.TransportId);
     private SoftDebuggerStartInfo? _startInformation;
-
-    /// <summary>
-    ///     constructor
-    /// </summary>
-    /// <param name="config">The launch configuration</param>
-    public Launch(LaunchConfig config)
-    {
-        Disposables = [];
-        Config = config;
-        _typeResolver = new ExternalTypeResolver(config.TransportId);
-    }
 
     /// <summary>
     ///     Gets the list of disposable actions to be called when disposing.
     /// </summary>
-    private List<Action> Disposables { get; init; }
+    private List<Action> Disposables { get; init; } = [];
 
     /// <summary>
     ///     Gets the launch configuration.
     /// </summary>
-    private LaunchConfig Config { get; init; }
+    private LaunchConfig Config { get; init; } = config;
 
     /// <summary>
     ///     Initializes the debug session for Unity debugging.
@@ -68,7 +61,7 @@ public class Launch
     ///     Gets the user assemblies for debugging.
     /// </summary>
     /// <returns>An list of user assembly paths</returns>
-    private List<string> GetUserAssemblies()
+    private string[] GetAssemblies()
     {
         var scriptAssembliesPath = Path.Combine(Config.ProjectPath, "Library", "ScriptAssemblies");
         if (!Directory.Exists(scriptAssembliesPath))
@@ -77,18 +70,7 @@ public class Launch
             return [];
         }
 
-        var dllFiles = Directory.GetFiles(scriptAssembliesPath, "*.dll", SearchOption.TopDirectoryOnly);
-        
-        // Filter out Unity assemblies
-        var userAssemblies = dllFiles.Where(dllPath =>
-        {
-            var assemblyName = Path.GetFileNameWithoutExtension(dllPath);
-            return !assemblyName.StartsWith("Unity.") &&
-                   !assemblyName.StartsWith("UnityEngine.") &&
-                   !assemblyName.StartsWith("UnityEditor.");
-        }).ToList();
-        
-        return userAssemblies;
+        return Directory.GetFiles(scriptAssembliesPath, "*.dll", SearchOption.TopDirectoryOnly).ToArray();
     }
 
     /// <summary>
@@ -97,6 +79,7 @@ public class Launch
     public void Dispose()
     {
         foreach (var disposable in Disposables)
+        {
             try
             {
                 disposable.Invoke();
@@ -106,7 +89,7 @@ public class Launch
             {
                 Debug.LogError($"Error while disposing {disposable.Method.Name}: {ex.Message}");
             }
-
+        }
         Disposables.Clear();
     }
 
@@ -121,10 +104,9 @@ public class Launch
         var assemblyPathMap = new Dictionary<string, string>();
         var assemblySymbolPathMap = new Dictionary<string, string>();
         var userAssemblyNames = new List<AssemblyName>();
-
-        foreach (var assemblyPath in GetUserAssemblies())
+        try
         {
-            try
+            foreach (var assemblyPath in GetAssemblies())
             {
                 var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
                 if (string.IsNullOrEmpty(assemblyName.FullName) || string.IsNullOrEmpty(assemblyName.Name))
@@ -141,21 +123,22 @@ public class Launch
                     Debug.Log($"No symbols found for '{assemblyPath}'");
                     continue;
                 }
-                
-                assemblySymbolPathMap.Add(assemblyName.FullName, assemblySymbolsFilePath);
+
+                assemblySymbolPathMap.TryAdd(assemblyName.FullName, assemblySymbolsFilePath);
                 assemblyPathMap.TryAdd(assemblyName.FullName, assemblyPath);
-                if (options.ProjectAssembliesOnly)
+                if (!assemblyName.Name.StartsWith("Unity.") &&
+                    !assemblyName.Name.StartsWith("UnityEngine.") &&
+                    !assemblyName.Name.StartsWith("UnityEditor."))
                 {
-                    userAssemblyNames.Add(assemblyName);    
+                    userAssemblyNames.Add(assemblyName);
                 }
-                Debug.Log($"User assembly '{assemblyName.Name}' added");
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Error while processing assembly '{assemblyPath}'", e);
+                Debug.Log($"Assembly '{assemblyName.Name}' added");
             }
         }
-
+        catch (Exception e)
+        {
+            Debug.LogError($"Error while processing assemblies", e);
+        }
         startInfo.SymbolPathMap = assemblySymbolPathMap;
         startInfo.AssemblyPathMap = assemblyPathMap;
         startInfo.UserAssemblyNames = userAssemblyNames;

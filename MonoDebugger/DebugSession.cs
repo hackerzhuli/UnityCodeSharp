@@ -23,10 +23,8 @@ public class DebugSession : DebugAdapterBase, IDisposable
     /// </summary>
     /// <param name="input">Input stream for protocol communication</param>
     /// <param name="output">Output stream for protocol communication</param>
-    /// <param name="options"></param>
-    public DebugSession(Stream input, Stream output, DebugOptions options)
+    public DebugSession(Stream input, Stream output)
     {
-        Options = options;
         InitializeProtocolClient(input, output);
 
         _session.LogWriter = OnSessionLog;
@@ -47,7 +45,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
         _session.Breakpoints.BreakpointStatusChanged += BreakpointStatusChanged;
     }
 
-    public DebugOptions Options { get; }
+    public DebugOptions? Options { get; set; }
     public SymbolServer SymbolServer => _symbolServer;
 
     private int CreateHandle<T>(Dictionary<int, T> dictionary, T value)
@@ -171,7 +169,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
             _symbolServer.SetEventLogger(OnDebugDataReceived);
 
             _launch = configuration.GetLaunchAgent();
-            _launch.Prepare(this);
+            _launch.Init(this);
             _launch.Connect(_session);
             return new DebugProtocol.AttachResponse();
         });

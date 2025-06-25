@@ -36,14 +36,14 @@ public class Launch
     private LaunchConfig Config { get; init; }
 
     /// <summary>
-    ///     Prepares the debug session for Unity debugging.
+    ///     Initializes the debug session for Unity debugging.
     /// </summary>
     /// <param name="debugSession">The debug session to prepare</param>
-    public void Prepare(DebugSession debugSession)
+    public void Init(DebugSession debugSession)
     {
         var editorInstance = GetEditorInstance();
         debugSession.OnOutputDataReceived($"Attaching to Unity({editorInstance.ProcessId}) - {editorInstance.Version}");
-
+        debugSession.Options = Config.DebuggerSessionOptions;
         var port = Config.ProcessId != 0 ? Config.ProcessId : 56000 + editorInstance.ProcessId % 1000;
         var appName = Path.GetFileName(Config.ProjectPath);
         _startInformation =

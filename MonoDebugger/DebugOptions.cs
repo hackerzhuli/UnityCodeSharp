@@ -60,16 +60,6 @@ public class DebugOptions
     }
 
     /// <summary>
-    ///     Gets or sets a value indicating whether to search Microsoft symbol server.
-    /// </summary>
-    public bool SearchMicrosoftSymbolServer { get; set; }
-
-    /// <summary>
-    ///     Gets or sets a value indicating whether to search NuGet symbol server.
-    /// </summary>
-    public bool SearchNuGetSymbolServer { get; set; }
-
-    /// <summary>
     ///     Gets or sets the symbol search paths.
     /// </summary>
     public List<string> SymbolSearchPaths { get; set; } = [];

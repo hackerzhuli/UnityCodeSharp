@@ -45,7 +45,7 @@ public class Launch
         debugSession.OnOutputDataReceived($"Attaching to Unity({editorInstance.ProcessId}) - {editorInstance.Version}");
 
         var port = Config.ProcessId != 0 ? Config.ProcessId : 56000 + editorInstance.ProcessId % 1000;
-        var appName = Path.GetFileName(Config.CurrentDirectory);
+        var appName = Path.GetFileName(Config.ProjectPath);
         _startInformation =
             new SoftDebuggerStartInfo(new SoftDebuggerConnectArgs(appName, IPAddress.Loopback, port));
         SetAssemblies(_startInformation, debugSession.SymbolServer);
@@ -68,31 +68,28 @@ public class Launch
     /// <summary>
     ///     Gets the user assemblies for debugging.
     /// </summary>
-    /// <returns>An enumerable of user assembly paths</returns>
-    private IEnumerable<string> GetUserAssemblies()
+    /// <returns>An list of user assembly paths</returns>
+    private List<string> GetUserAssemblies()
     {
-        if (Config.UserAssemblies != null && Config.UserAssemblies.Count > 0)
-            return Config.UserAssemblies;
-
-        var projectAssemblyPath =
-            Path.Combine(Config.CurrentDirectory, "Library", "ScriptAssemblies", "Assembly-CSharp.dll");
-        if (File.Exists(projectAssemblyPath))
-            return [projectAssemblyPath];
-
-        var projectFilePaths = Directory.GetFiles(Config.CurrentDirectory, "*.csproj", SearchOption.TopDirectoryOnly);
-        if (projectFilePaths.Length == 1)
+        var scriptAssembliesPath = Path.Combine(Config.ProjectPath, "Library", "ScriptAssemblies");
+        if (!Directory.Exists(scriptAssembliesPath))
         {
-            var project = MSBuildProjectsLoader.LoadProject(projectFilePaths[0]);
-            var assemblyName = project?.GetAssemblyName();
-            projectAssemblyPath = Path.Combine(Config.CurrentDirectory, "Library", "ScriptAssemblies",
-                $"{assemblyName}.dll");
-            if (File.Exists(projectAssemblyPath))
-                return [projectAssemblyPath];
+            Debug.LogError($"ScriptAssemblies directory not found at '{scriptAssembliesPath}'. ");
+            return [];
         }
 
-        Debug.LogError(
-            $"Could not find user assembly '{projectAssemblyPath}'. Specify 'userAssemblies' property in the launch configuration to override this behavior.");
-        return [];
+        var dllFiles = Directory.GetFiles(scriptAssembliesPath, "*.dll", SearchOption.TopDirectoryOnly);
+        
+        // Filter out Unity assemblies
+        var userAssemblies = dllFiles.Where(dllPath =>
+        {
+            var assemblyName = Path.GetFileNameWithoutExtension(dllPath);
+            return !assemblyName.StartsWith("Unity.") &&
+                   !assemblyName.StartsWith("UnityEngine.") &&
+                   !assemblyName.StartsWith("UnityEditor.");
+        }).ToList();
+        
+        return userAssemblies;
     }
 
     /// <summary>
@@ -122,12 +119,12 @@ public class Launch
     private void SetAssemblies(SoftDebuggerStartInfo startInfo, SymbolServer symbolServer)
     {
         var options = Config.DebuggerSessionOptions;
-        var useSymbolServers = options.SearchMicrosoftSymbolServer || options.SearchNuGetSymbolServer;
         var assemblyPathMap = new Dictionary<string, string>();
         var assemblySymbolPathMap = new Dictionary<string, string>();
-        var assemblyNames = new List<AssemblyName>();
+        var userAssemblyNames = new List<AssemblyName>();
 
         foreach (var assemblyPath in GetUserAssemblies())
+        {
             try
             {
                 var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
@@ -138,30 +135,31 @@ public class Launch
                 }
 
                 var assemblySymbolsFilePath =
-                    symbolServer.SearchSymbols(assemblyPath, assemblyName.Name, true);
+                    symbolServer.SearchSymbols(assemblyPath);
 
                 if (string.IsNullOrEmpty(assemblySymbolsFilePath))
-                    Debug.Log($"No symbols found for '{assemblyPath}'");
-
-                if (!string.IsNullOrEmpty(assemblySymbolsFilePath))
-                    assemblySymbolPathMap.Add(assemblyName.FullName, assemblySymbolsFilePath);
-
-                if (options.ProjectAssembliesOnly &&
-                    symbolServer.HasSymbols(assemblyPath, useSymbolServers))
                 {
-                    assemblyPathMap.TryAdd(assemblyName.FullName, assemblyPath);
-                    assemblyNames.Add(assemblyName);
-                    Debug.Log($"User assembly '{assemblyName.Name}' added");
+                    Debug.Log($"No symbols found for '{assemblyPath}'");
+                    continue;
                 }
+                
+                assemblySymbolPathMap.Add(assemblyName.FullName, assemblySymbolsFilePath);
+                assemblyPathMap.TryAdd(assemblyName.FullName, assemblyPath);
+                if (options.ProjectAssembliesOnly)
+                {
+                    userAssemblyNames.Add(assemblyName);    
+                }
+                Debug.Log($"User assembly '{assemblyName.Name}' added");
             }
             catch (Exception e)
             {
                 Debug.LogError($"Error while processing assembly '{assemblyPath}'", e);
             }
+        }
 
         startInfo.SymbolPathMap = assemblySymbolPathMap;
         startInfo.AssemblyPathMap = assemblyPathMap;
-        startInfo.UserAssemblyNames = assemblyNames;
+        startInfo.UserAssemblyNames = userAssemblyNames;
     }
 
     /// <summary>
@@ -171,7 +169,7 @@ public class Launch
     private EditorInstance GetEditorInstance()
     {
         // this is a file that Unity Editor will write to when it opens a project
-        var editorInfo = Path.Combine(Config.CurrentDirectory, "Library", "EditorInstance.json");
+        var editorInfo = Path.Combine(Config.ProjectPath, "Library", "EditorInstance.json");
         if (!File.Exists(editorInfo))
             throw ServerExtensions.GetProtocolException($"EditorInstance.json not found: '{editorInfo}'");
 

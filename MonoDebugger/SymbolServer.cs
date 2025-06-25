@@ -124,7 +124,7 @@ public class SymbolServer : IDisposable
     /// </summary>
     /// <param name="assemblyPath">The path to the assembly file.</param>
     /// <param name="assemblyName">The name of the assembly.</param>
-    /// <param name="useSymbolServers">Whether to search symbol servers in addition to local files.</param>
+    /// <param name="useSymbolServers">Whether to search symbol servers in addition to local files(will download).</param>
     /// <returns>The path to the found PDB file, or null if not found.</returns>
     public string? SearchSymbols(string assemblyPath, string? assemblyName = null, bool useSymbolServers = false)
     {
@@ -212,20 +212,11 @@ public class SymbolServer : IDisposable
         }
     }
 
-    private class PdbData
+    private class PdbData(CodeViewDebugDirectoryData codeView, PdbChecksumDebugDirectoryData checksum)
     {
-        private readonly PdbChecksumDebugDirectoryData _checksum;
-        private readonly CodeViewDebugDirectoryData _codeView;
-
-        public PdbData(CodeViewDebugDirectoryData codeView, PdbChecksumDebugDirectoryData checksum)
-        {
-            _codeView = codeView;
-            _checksum = checksum;
-        }
-
-        public string Id => _codeView.Guid.ToString("N");
+        public string Id => codeView.Guid.ToString("N");
 
         public string Hash =>
-            $"{_checksum.AlgorithmName}:{BitConverter.ToString(_checksum.Checksum.ToArray()).Replace("-", string.Empty)}";
+            $"{checksum.AlgorithmName}:{Convert.ToHexString(checksum.Checksum.ToArray())}";
     }
 }

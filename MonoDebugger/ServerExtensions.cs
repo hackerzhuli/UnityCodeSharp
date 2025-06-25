@@ -87,30 +87,6 @@ public static class ServerExtensions
     }
 
     /// <summary>
-    /// Executes a function safely, handling exceptions and converting them to protocol exceptions.
-    /// </summary>
-    /// <typeparam name="T">The return type of the handler function.</typeparam>
-    /// <param name="handler">The function to execute safely.</param>
-    /// <param name="finalizer">Optional action to execute in case of an exception.</param>
-    /// <returns>The result of the handler function.</returns>
-    /// <exception cref="ProtocolException">Thrown when an exception occurs during execution.</exception>
-    public static T DoSafe<T>(Func<T> handler, Action? finalizer = null)
-    {
-        try
-        {
-            return handler.Invoke();
-        }
-        catch (Exception ex)
-        {
-            finalizer?.Invoke();
-            if (ex is ProtocolException)
-                throw;
-            DebuggerLoggingService.CustomLogger?.LogError($"[Handled] {ex.Message}", ex);
-            throw GetProtocolException(ex.Message);
-        }
-    }
-
-    /// <summary>
     /// Safely tries to get a value from a dictionary, returning null if the key doesn't exist.
     /// </summary>
     /// <param name="dictionary">The dictionary to search in.</param>

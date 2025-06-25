@@ -31,7 +31,6 @@ public class DebugSession : DebugAdapterBase, IDisposable
         _session.DebugWriter = OnDebugLog;
         _session.OutputWriter = OnLog;
         _session.ExceptionHandler = OnExceptionHandled;
-
         _session.TargetStopped += TargetStopped;
         _session.TargetHitBreakpoint += TargetHitBreakpoint;
         _session.TargetExceptionThrown += TargetExceptionThrown;
@@ -41,29 +40,12 @@ public class DebugSession : DebugAdapterBase, IDisposable
         _session.TargetThreadStarted += TargetThreadStarted;
         _session.TargetThreadStopped += TargetThreadStopped;
         _session.AssemblyLoaded += AssemblyLoaded;
-
         _session.Breakpoints.BreakpointStatusChanged += BreakpointStatusChanged;
     }
 
     public DebugOptions? Options { get; set; }
+    
     public SymbolServer SymbolServer => _symbolServer;
-
-    private int CreateHandle<T>(Dictionary<int, T> dictionary, T value)
-    {
-        var handle = _nextHandle++;
-        dictionary[handle] = value;
-        return handle;
-    }
-
-    private T? GetHandle<T>(Dictionary<int, T> dictionary, int handle, T? defaultValue = default) where T : class
-    {
-        return dictionary.TryGetValue(handle, out var value) ? value : defaultValue;
-    }
-
-    private bool TryGetHandle<T>(Dictionary<int, T> dictionary, int handle, out T? value)
-    {
-        return dictionary.TryGetValue(handle, out value);
-    }
 
     /// <summary>
     ///     Starts the debug session and begins protocol communication.
@@ -88,7 +70,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
     ///     Handles error data received from the debugged process.
     /// </summary>
     /// <param name="stderr">Standard error message</param>
-    public void OnErrorDataReceived(string stderr)
+    private void OnErrorDataReceived(string stderr)
     {
         SendMessageEvent(DebugProtocol.OutputEvent.CategoryValue.Stderr, stderr);
     }
@@ -97,7 +79,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
     ///     Handles debug data received from the debugged process.
     /// </summary>
     /// <param name="debug">Debug message</param>
-    public void OnDebugDataReceived(string debug)
+    private void OnDebugDataReceived(string debug)
     {
         SendMessageEvent(DebugProtocol.OutputEvent.CategoryValue.Console, debug);
     }
@@ -115,7 +97,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
     ///     Handles unhandled exceptions in the debug session.
     /// </summary>
     /// <param name="ex">The unhandled exception</param>
-    protected void OnUnhandledException(Exception ex)
+    private void OnUnhandledException(Exception ex)
     {
         _launch?.Dispose();
     }
@@ -163,16 +145,27 @@ public class DebugSession : DebugAdapterBase, IDisposable
 
     protected override DebugProtocol.AttachResponse HandleAttachRequest(DebugProtocol.AttachArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             var configuration = new LaunchConfig(arguments.ConfigurationProperties);
             _symbolServer.SetEventLogger(OnDebugDataReceived);
-
             _launch = configuration.GetLaunchAgent();
             _launch.Init(this);
             _launch.Connect(_session);
             return new DebugProtocol.AttachResponse();
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
+    }
+
+    private Exception CreateException(Exception ex)
+    {
+        if (ex is ProtocolException)
+            return ex;
+        MonoClient.DebuggerLoggingService.CustomLogger?.LogError($"[Handled] {ex.Message}", ex);
+        return ServerExtensions.GetProtocolException(ex.Message);
     }
 
     protected override DebugProtocol.DisconnectResponse HandleDisconnectRequest(
@@ -186,57 +179,72 @@ public class DebugSession : DebugAdapterBase, IDisposable
 
     protected override DebugProtocol.ContinueResponse HandleContinueRequest(DebugProtocol.ContinueArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
-            if (!_session.IsRunning && !_session.HasExited)
+            if (_session is { IsRunning: false, HasExited: false })
                 _session.Continue();
-
             return new DebugProtocol.ContinueResponse();
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.NextResponse HandleNextRequest(DebugProtocol.NextArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             if (!_session.IsRunning && !_session.HasExited)
                 _session.NextLine();
-
             return new DebugProtocol.NextResponse();
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.StepInResponse HandleStepInRequest(DebugProtocol.StepInArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             if (!_session.IsRunning && !_session.HasExited)
                 _session.StepLine();
-
             return new DebugProtocol.StepInResponse();
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.StepOutResponse HandleStepOutRequest(DebugProtocol.StepOutArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             if (!_session.IsRunning && !_session.HasExited)
                 _session.Finish();
-
             return new DebugProtocol.StepOutResponse();
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.PauseResponse HandlePauseRequest(DebugProtocol.PauseArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             if (_session.IsRunning)
                 _session.Stop();
-
             return new DebugProtocol.PauseResponse();
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.SetExceptionBreakpointsResponse HandleSetExceptionBreakpointsRequest(
@@ -261,8 +269,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
             if (option.Condition.StartsWith('!'))
             {
                 var catchpoint = _session.Breakpoints.AddCatchpoint(allExceptionFilter);
-                foreach (var condition in option.Condition.Substring(1)
-                             .Split(',', StringSplitOptions.RemoveEmptyEntries))
+                foreach (var condition in option.Condition[1..].Split(',', StringSplitOptions.RemoveEmptyEntries))
                     catchpoint.AddIgnore(condition.Trim());
             }
             else
@@ -357,7 +364,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
     protected override DebugProtocol.StackTraceResponse HandleStackTraceRequest(
         DebugProtocol.StackTraceArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             // Avoid using 'session.ActiveThread' because its backtrace may be not actual
             var thread = _session.FindThread(arguments.ThreadId);
@@ -379,11 +386,12 @@ public class DebugSession : DebugAdapterBase, IDisposable
                     continue;
                 }
 
-                if (frame.Language == "Transition" && Options.SkipNativeTransitions)
+                if (frame.Language == "Transition" && (Options?.SkipNativeTransitions ?? true))
                     continue;
 
                 DebugProtocol.Source? source = null;
-                var frameId = CreateHandle(_frameHandles, frame);
+                var handle = _nextHandle++;
+                _frameHandles[handle] = frame;
                 var remappedSourcePath = this.RemapSourceLocation(frame.SourceLocation);
                 if (!string.IsNullOrEmpty(remappedSourcePath) && File.Exists(remappedSourcePath))
                     source = new DebugProtocol.Source
@@ -396,7 +404,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
                     {
                         Path = frame.SourceLocation.FileName,
                         SourceReference = frame.GetSourceReference(),
-                        AlternateSourceReference = frameId,
+                        AlternateSourceReference = handle,
                         VsSourceLinkInfo = frame.SourceLocation.SourceLink.ToSourceLinkInfo(),
                         Name = string.IsNullOrEmpty(frame.SourceLocation.FileName)
                             ? Path.GetFileName(frame.FullModuleName)
@@ -405,7 +413,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
 
                 stackFrames.Add(new DebugProtocol.StackFrame
                 {
-                    Id = frameId,
+                    Id = handle,
                     Source = source,
                     Name = frame.GetFullStackFrameText(),
                     Line = frame.SourceLocation.Line,
@@ -421,40 +429,51 @@ public class DebugSession : DebugAdapterBase, IDisposable
             }
 
             return new DebugProtocol.StackTraceResponse(stackFrames);
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.ScopesResponse HandleScopesRequest(DebugProtocol.ScopesArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             var frameId = arguments.FrameId;
-            var frame = GetHandle(_frameHandles, frameId);
+            var frame = _frameHandles.GetValueOrDefault(frameId);
             var scopes = new List<DebugProtocol.Scope>();
 
             if (frame == null)
                 throw new ProtocolException("frame not found");
 
+            Func<MonoClient.ObjectValue[]> value = frame.GetAllLocals;
+            var handle = _nextHandle++;
+            _variableHandles[handle] = value;
             scopes.Add(new DebugProtocol.Scope
             {
                 Name = "Locals",
                 PresentationHint = DebugProtocol.Scope.PresentationHintValue.Locals,
-                VariablesReference = CreateHandle(_variableHandles, frame.GetAllLocals)
+                VariablesReference = handle
             });
-
+            
             return new DebugProtocol.ScopesResponse(scopes);
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.VariablesResponse HandleVariablesRequest(
         DebugProtocol.VariablesArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             var reference = arguments.VariablesReference;
             var variables = new List<DebugProtocol.Variable>();
 
-            if (TryGetHandle(_variableHandles, reference, out var getChildrenDelegate))
+            if (_variableHandles.TryGetValue(reference, out var getChildrenDelegate))
             {
                 var children = getChildrenDelegate?.Invoke();
                 if (children != null && children.Length > 0)
@@ -467,12 +486,16 @@ public class DebugSession : DebugAdapterBase, IDisposable
             }
 
             return new DebugProtocol.VariablesResponse(variables);
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.ThreadsResponse HandleThreadsRequest(DebugProtocol.ThreadsArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             var threads = new List<DebugProtocol.Thread>();
             var process = _session.GetProcesses().FirstOrDefault();
@@ -486,15 +509,19 @@ public class DebugSession : DebugAdapterBase, IDisposable
             }
 
             return new DebugProtocol.ThreadsResponse(threads);
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.EvaluateResponse HandleEvaluateRequest(DebugProtocol.EvaluateArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             var expression = arguments.TrimExpression();
-            var frame = GetHandle(_frameHandles, arguments.FrameId ?? 0);
+            var frame = _frameHandles.GetValueOrDefault(arguments.FrameId ?? 0);
             if (frame == null)
                 throw new ProtocolException("no active stackframe");
 
@@ -518,15 +545,24 @@ public class DebugSession : DebugAdapterBase, IDisposable
 
             var handle = 0;
             if (value.HasChildren)
-                handle = CreateHandle(_variableHandles, value.GetAllChildren);
+            {
+                Func<MonoClient.ObjectValue[]> value1 = value.GetAllChildren;
+                var handle1 = _nextHandle++;
+                _variableHandles[handle1] = value1;
+                handle = handle1;
+            }
 
             return new DebugProtocol.EvaluateResponse(value.ToDisplayValue(), handle);
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.SourceResponse HandleSourceRequest(DebugProtocol.SourceArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             var sourceLinkUri = arguments.Source.VsSourceLinkInfo?.Url;
             if (!string.IsNullOrEmpty(sourceLinkUri) && _session.Options.AutomaticSourceLinkDownload ==
@@ -537,33 +573,41 @@ public class DebugSession : DebugAdapterBase, IDisposable
                     return new DebugProtocol.SourceResponse(content);
             }
 
-            var frame = GetHandle(_frameHandles, arguments.Source.AlternateSourceReference ?? -1);
+            var frame = _frameHandles.GetValueOrDefault(arguments.Source.AlternateSourceReference ?? -1);
             if (frame == null)
                 throw ServerExtensions.GetProtocolException("No source available");
 
             return new DebugProtocol.SourceResponse(frame.GetAssemblyCode());
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.ExceptionInfoResponse HandleExceptionInfoRequest(
         DebugProtocol.ExceptionInfoArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
             var ex = _session.FindException(arguments.ThreadId);
             if (ex == null)
                 throw new ProtocolException("No exception available");
 
             return ex.ToExceptionInfoResponse();
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.CompletionsResponse HandleCompletionsRequest(
         DebugProtocol.CompletionsArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
-            var frame = GetHandle(_frameHandles, arguments.FrameId ?? 0);
+            var frame = _frameHandles.GetValueOrDefault(arguments.FrameId ?? 0);
             if (frame == null)
                 throw new ProtocolException("no active stackframe");
 
@@ -573,24 +617,28 @@ public class DebugSession : DebugAdapterBase, IDisposable
                 var lastTriggerIndex = arguments.Text.LastIndexOf('.');
                 if (lastTriggerIndex > 0)
                 {
-                    resolvedText = frame.ResolveExpression(arguments.Text.Substring(0, lastTriggerIndex));
-                    resolvedText += arguments.Text.Substring(lastTriggerIndex);
+                    resolvedText = frame.ResolveExpression(arguments.Text[..lastTriggerIndex]);
+                    resolvedText += arguments.Text[lastTriggerIndex..];
                 }
             }
 
             var completionData = frame.GetExpressionCompletionData(resolvedText ?? arguments.Text);
-            if (completionData == null || completionData.Items == null)
+            if (completionData?.Items == null)
                 return new DebugProtocol.CompletionsResponse();
 
             return new DebugProtocol.CompletionsResponse(
                 completionData.Items.Select(x => x.ToCompletionItem()).ToList());
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
 
     protected override DebugProtocol.SetVariableResponse HandleSetVariableRequest(
         DebugProtocol.SetVariableArguments arguments)
     {
-        var variablesDelegate = GetHandle(_variableHandles, arguments.VariablesReference);
+        var variablesDelegate = _variableHandles.GetValueOrDefault(arguments.VariablesReference);
         if (variablesDelegate == null)
             throw new ProtocolException("VariablesReference not found");
 
@@ -607,25 +655,29 @@ public class DebugSession : DebugAdapterBase, IDisposable
     protected override DebugProtocol.GotoTargetsResponse HandleGotoTargetsRequest(
         DebugProtocol.GotoTargetsArguments arguments)
     {
-        var targetId = CreateHandle(_gotoHandles,
-            new MonoClient.SourceLocation(string.Empty, arguments.Source.Path, arguments.Line, arguments.Column ?? 1, 0,
-                0));
-        return arguments.ToJumpToCursorTarget(targetId);
+        var value = new MonoClient.SourceLocation(string.Empty, arguments.Source.Path, arguments.Line, arguments.Column ?? 1, 0,
+            0);
+        var handle = _nextHandle++;
+        _gotoHandles[handle] = value;
+        return arguments.ToJumpToCursorTarget(handle);
     }
 
     protected override DebugProtocol.GotoResponse HandleGotoRequest(DebugProtocol.GotoArguments arguments)
     {
-        return ServerExtensions.DoSafe(() =>
+        try
         {
-            var target = GetHandle(_gotoHandles, arguments.TargetId);
+            var target = _gotoHandles.GetValueOrDefault(arguments.TargetId);
             if (target == null)
                 throw new ProtocolException("GotoTarget not found");
 
             _session.SetNextStatement(target.FileName, target.Line, target.Column);
             return new DebugProtocol.GotoResponse();
-        });
+        }
+        catch (Exception ex)
+        {
+            throw CreateException(ex);
+        }
     }
-
 
     private void TargetStopped(object? sender, MonoClient.TargetEventArgs e)
     {
@@ -730,7 +782,14 @@ public class DebugSession : DebugAdapterBase, IDisposable
     private DebugProtocol.Variable CreateVariable(MonoClient.ObjectValue v)
     {
         var childrenReference = 0;
-        if (v.HasChildren && !v.HasNullValue()) childrenReference = CreateHandle(_variableHandles, v.GetAllChildren);
+        if (v.HasChildren && !v.HasNullValue())
+        {
+            Func<MonoClient.ObjectValue[]> value = v.GetAllChildren;
+            var handle = _nextHandle++;
+            _variableHandles[handle] = value;
+            childrenReference = handle;
+        }
+
         return new DebugProtocol.Variable
         {
             Name = v.Name,

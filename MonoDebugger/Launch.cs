@@ -1,7 +1,6 @@
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
-using DotRush.Common.MSBuild;
 using Mono.Debugging.Soft;
 
 namespace MonoDebugger;

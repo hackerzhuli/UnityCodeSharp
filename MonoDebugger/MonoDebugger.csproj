@@ -5,16 +5,18 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <PublishTrimmed>true</PublishTrimmed>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.VisualStudio.Shared.VSCodeDebugProtocol" Version="18.0.10427.1" />
-      <PackageReference Include="StreamJsonRpc" Version="2.22.11" />
+        <PackageReference Include="Microsoft.VisualStudio.Shared.VSCodeDebugProtocol" Version="18.0.10427.1" />
+        <PackageReference Include="StreamJsonRpc" Version="2.22.11" />
+        <TrimmerRootDescriptor Include="Trim.xml" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DotRush\src\DotRush.Common\DotRush.Common.csproj" />
-      <ProjectReference Include="..\Mono\Mono.Debugging.Soft\Mono.Debugging.Soft.csproj" />
+        <ProjectReference Include="..\DotRush\src\DotRush.Common\DotRush.Common.csproj" />
+        <ProjectReference Include="..\Mono\Mono.Debugging.Soft\Mono.Debugging.Soft.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,0 +1,37 @@
+<linker>
+    <!-- used by Mono Libraries -->
+    <assembly fullname="System.Security.Cryptography.Algorithms">
+        <type fullname="System.Security.Cryptography.SHA1" preserve="all" />
+        <type fullname="System.Security.Cryptography.SHA256" preserve="all" />
+        <type fullname="System.Security.Cryptography.MD5" preserve="all" />
+    </assembly>
+    
+    <assembly fullname="Mono.Cecil">
+        <type fullname="Mono.Cecil.Cil.OpCodes" preserve="all" />
+    </assembly>
+
+    <assembly fullname="System.Reflection.Primitives">
+        <type fullname="System.Reflection.Emit.OpCodes" preserve="all"/>
+    </assembly>
+    
+    <assembly fullname="System.Security.Cryptography">
+        <type fullname="System.Security.Cryptography.CryptoConfig" preserve="all" />
+    </assembly>
+    
+    <!-- trim warnings assemblies -->
+    <assembly fullname="MessagePack" preserve="all" />
+    <assembly fullname="Microsoft.CodeAnalysis" preserve="all" />
+    <assembly fullname="Microsoft.SymbolStore" preserve="all" />
+    <assembly fullname="Microsoft.VisualStudio.Shared.VSCodeDebugProtocol" preserve="all" />
+    <assembly fullname="Microsoft.VisualStudio.Threading" preserve="all" />
+    <assembly fullname="Newtonsoft.Json" preserve="all" />
+    <assembly fullname="StreamJsonRpc" preserve="all" />
+    
+    <!-- Mono Libraries -->
+    <assembly fullname="Mono.Debugging.Soft" preserve="all" />
+    <assembly fullname="Mono.Debugging" preserve="all" />
+    <assembly fullname="Mono.Debugger.Soft" preserve="all" />
+    
+    <!-- self -->
+    <assembly  fullname="MonoDebugger" preserve="all" />
+</linker>

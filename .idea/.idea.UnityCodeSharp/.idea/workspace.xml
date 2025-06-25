@@ -9,14 +9,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4a738f26-54fb-4b2c-9d67-ceed1b46c50f" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/DotRush" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitmodules" beforeDir="false" afterPath="$PROJECT_DIR$/.gitmodules" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.UnityCodeSharp/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnityCodeSharp/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/MonoDebugger/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.UnityCodeSharp/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnityCodeSharp/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.trae/rules/project_rules.md" beforeDir="false" afterPath="$PROJECT_DIR$/.trae/rules/project_rules.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Mono" beforeDir="false" afterPath="$PROJECT_DIR$/Mono" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Mono/Mono.Debugger.Soft/Mono.Debugger.Soft.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Mono/Mono.Debugger.Soft/Mono.Debugger.Soft.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Mono/Mono.Debugging.Soft/Mono.Debugging.Soft.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Mono/Mono.Debugging.Soft/Mono.Debugging.Soft.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Mono/Mono.Debugging.settings" beforeDir="false" afterPath="$PROJECT_DIR$/Mono/Mono.Debugging.settings" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Mono/Mono.Debugging/Mono.Debugging.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/Mono/Mono.Debugging/Mono.Debugging.csproj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MonoDebugger/MonoDebugger.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/MonoDebugger.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MonoDebugger/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/MonoDebugger/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UnityCodeSharp.sln" beforeDir="false" afterPath="$PROJECT_DIR$/UnityCodeSharp.sln" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UnityCodeSharp.sln.DotSettings.user" beforeDir="false" afterPath="$PROJECT_DIR$/UnityCodeSharp.sln.DotSettings.user" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,11 +27,29 @@
   <component name="DpaMonitoringSettings">
     <option name="firstShow" value="false" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="XML File" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/46fd8ef7e30a43579c2fdfd99e9da6215b228/d2/2c5f6065/ProtocolException.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a6b7f037ba7b44df80b8d3aa7e58eeb2e8e938/d9/cdb48518/DynamicDependencyAttribute.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/da8334f4e5d34f52854e601bbf098b9a52000/57/47d8961a/OpCodes.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/da8334f4e5d34f52854e601bbf098b9a52000/8c/2b5eb4ff/OpCode.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/MonoDebugger/DebugOptions.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/MonoDebugger/DebugSession.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/MonoDebugger/ExternalTypeResolver.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/MonoDebugger/Launch.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/MonoDebugger/LaunchConfig.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/MonoDebugger/MonoExtensions.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/MonoDebugger/Program.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/MonoDebugger/ServerExtensions.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProblemsViewState">
@@ -46,6 +65,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    ".NET Project.DotRush.Roslyn.Server.executor": "Run",
     ".NET Project.MonoDebugger.executor": "Debug",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "Publish to folder.Publish DotRush.Roslyn.Server to folder win64.executor": "Run",
@@ -61,7 +81,7 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager" selected=".NET Project.MonoDebugger">
+  <component name="RunManager" selected="Publish to folder.Publish UnityCodeSharp to folder win64">
     <configuration name="Publish DotRush.Roslyn.Server to folder win64" type="DotNetFolderPublish" factoryName="Publish to folder">
       <riderPublish configuration="Release" delete_existing_files="true" platform="Any CPU" produce_single_file="true" runtime="win-x64" self_contained="true" target_folder="$PROJECT_DIR$/DotRush/src/DotRush.Roslyn.Server/bin/Release/net10.0/win-x64/publish" target_framework="net10.0" trim_unused_assemblies="true" uuid_high="739688161897630951" uuid_low="-6101913863047095119" />
       <method v="2" />
@@ -121,8 +141,19 @@
       <option name="presentableId" value="Default" />
       <updated>1750777437491</updated>
       <workItem from="1750777438750" duration="4147000" />
-      <workItem from="1750791238083" duration="3229000" />
+      <workItem from="1750791238083" duration="5649000" />
+      <workItem from="1750819383007" duration="4283000" />
+      <workItem from="1750823752719" duration="3080000" />
     </task>
+    <task id="LOCAL-00001" summary="Added DotRush as submodule">
+      <option name="closed" value="true" />
+      <created>1750794772643</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1750794772643</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -130,8 +161,21 @@
   </component>
   <component name="UnityCheckinConfiguration" checkUnsavedScenes="true" />
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+    <MESSAGE value="Added DotRush as submodule" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added DotRush as submodule" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

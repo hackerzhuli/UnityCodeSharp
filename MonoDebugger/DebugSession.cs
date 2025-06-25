@@ -83,16 +83,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
     {
         SendMessageEvent(DebugProtocol.OutputEvent.CategoryValue.Console, debug);
     }
-
-    /// <summary>
-    ///     Handles important data received from the debugged process.
-    /// </summary>
-    /// <param name="message">Important message</param>
-    public void OnImportantDataReceived(string message)
-    {
-        SendMessageEvent(DebugProtocol.OutputEvent.CategoryValue.Important, message);
-    }
-
+    
     /// <summary>
     ///     Handles unhandled exceptions in the debug session.
     /// </summary>

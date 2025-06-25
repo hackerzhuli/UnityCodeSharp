@@ -1,10 +1,9 @@
-﻿namespace MonoDebugger;
+namespace MonoDebugger;
 
-/// <summary>
-/// Main program class for the MonoDebugger application.
-/// </summary>
-public class Program
+public static class App
 {
+    public static string AppDataPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "UnityCode");
+
     private static void Main(string[] args)
     {
         var debugSession =

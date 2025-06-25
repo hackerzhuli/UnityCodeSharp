@@ -33,7 +33,7 @@ public class SymbolServer : IDisposable
     public SymbolServer()
     {
         _httpClient = new HttpClient();
-        _symbolsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "symbols");
+        _symbolsDirectory = Path.Combine(App.AppDataPath, "symbols");
     }
 
     public void Dispose()

@@ -6,8 +6,7 @@ namespace MonoDebugger;
 public static class Debug
 {
     private static readonly string LogFilePath =
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "UnityCodeSharp",
-            "debug.log");
+        Path.Combine(App.AppDataPath, "debug.log");
 
     private static readonly object LockObject = new();
 

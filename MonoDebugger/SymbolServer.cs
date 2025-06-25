@@ -5,50 +5,57 @@ using Mono.Debugging.Client;
 namespace MonoDebugger;
 
 /// <summary>
-/// Extension methods and utilities for symbol server operations and source link functionality.
+///     Utilities for symbol server operations and source link functionality.
 /// </summary>
 /// <remarks>
-/// Why are we downloading symbols?
-/// All normal packages and project source code that is compiled by Unity and their assemblies and symbols are present in Library/ScriptAssemblies
-/// But prebuild assemblies some may come from NUGET don't have symbols and .Net assemblies or their symbols are not present
+///     Why are we downloading symbols?
+///     All normal packages and project source code that is compiled by Unity and their assemblies and symbols are present
+///     in Library/ScriptAssemblies
+///     But prebuild assemblies some may come from NUGET don't have symbols and .Net assemblies or their symbols are not
+///     present
 /// </remarks>
-public static class SymbolServerExtensions
+public class SymbolServer : IDisposable
 {
     /// <summary>
-    /// The Microsoft symbol server address for downloading debug symbols.
+    ///     The Microsoft symbol server address for downloading debug symbols.
     /// </summary>
-    public const string MicrosoftSymbolServerAddress = "https://msdl.microsoft.com/download/symbols";
-    
+    private const string MicrosoftSymbolServerAddress = "https://msdl.microsoft.com/download/symbols";
+
     /// <summary>
-    /// The NuGet symbol server address for downloading debug symbols.
+    ///     The NuGet symbol server address for downloading debug symbols.
     /// </summary>
-    public const string NuGetSymbolServerAddress = "https://symbols.nuget.org/download/symbols";
+    private const string NuGetSymbolServerAddress = "https://symbols.nuget.org/download/symbols";
 
-    private static readonly HttpClient HttpClient;
-    private static Action<string>? _eventLogger;
-    private static readonly string SymbolsDirectory;
+    private readonly HttpClient _httpClient;
+    private readonly string _symbolsDirectory;
+    private Action<string>? _eventLogger;
 
-    static SymbolServerExtensions()
+    public SymbolServer()
     {
-        HttpClient = new HttpClient();
-        SymbolsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "symbols");
+        _httpClient = new HttpClient();
+        _symbolsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "symbols");
+    }
+
+    public void Dispose()
+    {
+        _httpClient?.Dispose();
     }
 
     /// <summary>
-    /// Sets the event logger for symbol server operations.
+    ///     Sets the event logger for symbol server operations.
     /// </summary>
     /// <param name="logger">The action to use for logging events.</param>
-    public static void SetEventLogger(Action<string> logger)
+    public void SetEventLogger(Action<string> logger)
     {
         _eventLogger = logger;
     }
 
     /// <summary>
-    /// Downloads a source file from the specified URI using source link.
+    ///     Downloads a source file from the specified URI using source link.
     /// </summary>
     /// <param name="uri">The URI of the source file to download.</param>
     /// <returns>The content of the source file, or null if download failed.</returns>
-    public static string? DownloadSourceFile(string uri)
+    public string? DownloadSourceFile(string uri)
     {
         if (!Uri.TryCreate(uri, UriKind.Absolute, out var sourceLinkUri))
         {
@@ -60,19 +67,19 @@ public static class SymbolServerExtensions
     }
 
     /// <summary>
-    /// Downloads debug symbols for an assembly from a symbol server.
+    ///     Downloads debug symbols for an assembly from a symbol server.
     /// </summary>
     /// <param name="assemblyPath">The path to the assembly file.</param>
     /// <param name="assemblyName">The name of the assembly.</param>
     /// <param name="serverAddress">The symbol server address to download from.</param>
     /// <returns>The path to the downloaded PDB file, or null if download failed.</returns>
-    public static string? DownloadSourceSymbols(string assemblyPath, string assemblyName, string serverAddress)
+    private string? DownloadSourceSymbols(string assemblyPath, string assemblyName, string serverAddress)
     {
         var pdbData = GetPdbData(assemblyPath);
         if (pdbData == null)
             return null;
 
-        var outputFilePath = Path.Combine(SymbolsDirectory, pdbData.Id + ".pdb");
+        var outputFilePath = Path.Combine(_symbolsDirectory, pdbData.Id + ".pdb");
         if (File.Exists(outputFilePath))
             return outputFilePath;
 
@@ -88,51 +95,55 @@ public static class SymbolServerExtensions
     }
 
     /// <summary>
-    /// Checks if debug symbols are available for an assembly, either locally or on symbol servers.
+    ///     Checks if debug symbols are available for an assembly, either locally or on symbol servers.
     /// </summary>
     /// <param name="assemblyPath">The path to the assembly file.</param>
-    /// <param name="inludeSymbolServers">Whether to check symbol servers in addition to local files.</param>
+    /// <param name="useSymbolServers">
+    ///     Whether to check symbol servers in addition to local files(will not download symbol
+    ///     files, just check the cache).
+    /// </param>
     /// <returns>True if debug symbols are available, otherwise false.</returns>
-    public static bool HasDebugSymbols(string assemblyPath, bool inludeSymbolServers)
+    public bool HasSymbols(string assemblyPath, bool useSymbolServers)
     {
         var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
         if (File.Exists(pdbPath))
             return true;
-        if (!inludeSymbolServers)
+        if (!useSymbolServers)
             return false;
 
         var pdbData = GetPdbData(assemblyPath);
         if (pdbData == null)
             return false;
 
-        pdbPath = Path.Combine(SymbolsDirectory, pdbData.Id + ".pdb");
+        pdbPath = Path.Combine(_symbolsDirectory, pdbData.Id + ".pdb");
         return File.Exists(pdbPath);
     }
 
     /// <summary>
-    /// Searches for debug symbols in the specified search paths.
+    ///     Searches for debug symbols in the specified search paths.
     /// </summary>
-    /// <param name="searchPaths">The collection of paths to search for symbol files.</param>
     /// <param name="assemblyPath">The path to the assembly file.</param>
+    /// <param name="assemblyName">The name of the assembly.</param>
+    /// <param name="useSymbolServers">Whether to search symbol servers in addition to local files.</param>
     /// <returns>The path to the found PDB file, or null if not found.</returns>
-    public static string? SearchSymbols(List<string> searchPaths, string assemblyPath)
+    public string? SearchSymbols(string assemblyPath, string? assemblyName = null, bool useSymbolServers = false)
     {
         var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
         if (File.Exists(pdbPath))
             return pdbPath;
+        if (!useSymbolServers) return null;
 
-        var pdbName = Path.GetFileName(pdbPath);
-        foreach (var path in searchPaths)
-        {
-            pdbPath = Path.Combine(path, pdbName);
-            if (File.Exists(pdbPath))
-                return pdbPath;
-        }
+        if (assemblyName == null) assemblyName = Path.GetFileNameWithoutExtension(assemblyPath);
 
-        return null;
+        var result = DownloadSourceSymbols(assemblyPath,
+            assemblyName, MicrosoftSymbolServerAddress);
+        if (result != null) return result;
+
+        return DownloadSourceSymbols(assemblyPath,
+            assemblyName, NuGetSymbolServerAddress);
     }
 
-    private static async Task<bool> DownloadFileAsync(string url, string outputFilePath)
+    private async Task<bool> DownloadFileAsync(string url, string outputFilePath)
     {
         try
         {
@@ -140,7 +151,7 @@ public static class SymbolServerExtensions
             //     httpClient.DefaultRequestHeaders.Remove("SymbolChecksum");
             //     httpClient.DefaultRequestHeaders.Add("SymbolChecksum", header);
             // }
-            using var response = await HttpClient.GetAsync(url);
+            using var response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
                 return false;
 
@@ -159,11 +170,11 @@ public static class SymbolServerExtensions
         }
     }
 
-    private static async Task<string?> GetFileContentAsync(string url)
+    private async Task<string?> GetFileContentAsync(string url)
     {
         try
         {
-            using var response = await HttpClient.GetAsync(url);
+            using var response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
                 return null;
 
@@ -208,8 +219,8 @@ public static class SymbolServerExtensions
 
         public PdbData(CodeViewDebugDirectoryData codeView, PdbChecksumDebugDirectoryData checksum)
         {
-            this._codeView = codeView;
-            this._checksum = checksum;
+            _codeView = codeView;
+            _checksum = checksum;
         }
 
         public string Id => _codeView.Guid.ToString("N");

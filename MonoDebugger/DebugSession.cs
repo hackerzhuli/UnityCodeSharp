@@ -8,12 +8,13 @@ namespace MonoDebugger;
 /// <summary>
 ///     Debug session that handles VS Code debug protocol communication and Unity debugging.
 /// </summary>
-public class DebugSession : DebugAdapterBase
+public class DebugSession : DebugAdapterBase, IDisposable
 {
     private readonly Dictionary<int, MonoClient.StackFrame> _frameHandles = new();
     private readonly Dictionary<int, MonoClient.SourceLocation> _gotoHandles = new();
     private readonly SoftDebuggerSession _session = new();
     private readonly Dictionary<int, Func<MonoClient.ObjectValue[]>> _variableHandles = new();
+    private readonly SymbolServer _symbolServer = new();
     private Launch _launch = null!;
     private int _nextHandle = 1000;
 
@@ -47,6 +48,7 @@ public class DebugSession : DebugAdapterBase
     }
 
     public DebugOptions Options { get; }
+    public SymbolServer SymbolServer => _symbolServer;
 
     private int CreateHandle<T>(Dictionary<int, T> dictionary, T value)
     {
@@ -166,7 +168,7 @@ public class DebugSession : DebugAdapterBase
         return ServerExtensions.DoSafe(() =>
         {
             var configuration = new LaunchConfig(arguments.ConfigurationProperties);
-            SymbolServerExtensions.SetEventLogger(OnDebugDataReceived);
+            _symbolServer.SetEventLogger(OnDebugDataReceived);
 
             _launch = configuration.GetLaunchAgent();
             _launch.Prepare(this);
@@ -532,7 +534,7 @@ public class DebugSession : DebugAdapterBase
             if (!string.IsNullOrEmpty(sourceLinkUri) && _session.Options.AutomaticSourceLinkDownload ==
                 MonoClient.AutomaticSourceDownload.Always)
             {
-                var content = SymbolServerExtensions.DownloadSourceFile(sourceLinkUri);
+                var content = _symbolServer.DownloadSourceFile(sourceLinkUri);
                 if (!string.IsNullOrEmpty(content))
                     return new DebugProtocol.SourceResponse(content);
             }
@@ -738,5 +740,13 @@ public class DebugSession : DebugAdapterBase
             Value = v.ToDisplayValue(),
             VariablesReference = childrenReference
         };
+    }
+
+    /// <summary>
+    /// Disposes the resources used by the DebugSession.
+    /// </summary>
+    public void Dispose()
+    {
+        _symbolServer?.Dispose();
     }
 }

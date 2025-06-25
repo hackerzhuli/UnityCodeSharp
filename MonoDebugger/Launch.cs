@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
@@ -8,7 +7,7 @@ using Mono.Debugging.Soft;
 namespace MonoDebugger;
 
 /// <summary>
-///     Unity debug launch agent that handles debugging Unity applications.
+///     Handles launch debugging Unity apps.
 /// </summary>
 public class Launch
 {
@@ -16,7 +15,7 @@ public class Launch
     private SoftDebuggerStartInfo? _startInformation;
 
     /// <summary>
-    ///     Initializes a new instance of the UnityDebugLaunchAgent class.
+    ///     constructor
     /// </summary>
     /// <param name="config">The launch configuration</param>
     public Launch(LaunchConfig config)
@@ -49,7 +48,7 @@ public class Launch
         var appName = Path.GetFileName(Config.CurrentDirectory);
         _startInformation =
             new SoftDebuggerStartInfo(new SoftDebuggerConnectArgs(appName, IPAddress.Loopback, port));
-        SetAssemblies(_startInformation);
+        SetAssemblies(_startInformation, debugSession.SymbolServer);
     }
 
     /// <summary>
@@ -119,7 +118,8 @@ public class Launch
     ///     Sets up assemblies for the debugger start info.
     /// </summary>
     /// <param name="startInfo">The debugger start info to configure</param>
-    private void SetAssemblies(SoftDebuggerStartInfo startInfo)
+    /// <param name="symbolServer">The symbol server instance to use</param>
+    private void SetAssemblies(SoftDebuggerStartInfo startInfo, SymbolServer symbolServer)
     {
         var options = Config.DebuggerSessionOptions;
         var useSymbolServers = options.SearchMicrosoftSymbolServer || options.SearchNuGetSymbolServer;
@@ -138,13 +138,8 @@ public class Launch
                 }
 
                 var assemblySymbolsFilePath =
-                    SymbolServerExtensions.SearchSymbols(options.SymbolSearchPaths, assemblyPath);
-                if (string.IsNullOrEmpty(assemblySymbolsFilePath) && options.SearchMicrosoftSymbolServer)
-                    assemblySymbolsFilePath = SymbolServerExtensions.DownloadSourceSymbols(assemblyPath,
-                        assemblyName.Name, SymbolServerExtensions.MicrosoftSymbolServerAddress);
-                if (string.IsNullOrEmpty(assemblySymbolsFilePath) && options.SearchNuGetSymbolServer)
-                    assemblySymbolsFilePath = SymbolServerExtensions.DownloadSourceSymbols(assemblyPath,
-                        assemblyName.Name, SymbolServerExtensions.NuGetSymbolServerAddress);
+                    symbolServer.SearchSymbols(assemblyPath, assemblyName.Name, true);
+
                 if (string.IsNullOrEmpty(assemblySymbolsFilePath))
                     Debug.Log($"No symbols found for '{assemblyPath}'");
 
@@ -152,7 +147,7 @@ public class Launch
                     assemblySymbolPathMap.Add(assemblyName.FullName, assemblySymbolsFilePath);
 
                 if (options.ProjectAssembliesOnly &&
-                    SymbolServerExtensions.HasDebugSymbols(assemblyPath, useSymbolServers))
+                    symbolServer.HasSymbols(assemblyPath, useSymbolServers))
                 {
                     assemblyPathMap.TryAdd(assemblyName.FullName, assemblyPath);
                     assemblyNames.Add(assemblyName);

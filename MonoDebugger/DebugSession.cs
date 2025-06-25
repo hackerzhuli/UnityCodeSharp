@@ -156,11 +156,8 @@ public class DebugSession : DebugAdapterBase
             SupportsCompletionsRequest = true,
             SupportsSetVariable = true,
             SupportsGotoTargetsRequest = true,
-            CompletionTriggerCharacters = new List<string> { "." },
-            ExceptionBreakpointFilters = new List<DebugProtocol.ExceptionBreakpointsFilter>
-            {
-                ExceptionsFilter.AllExceptions
-            }
+            CompletionTriggerCharacters = ["."],
+            ExceptionBreakpointFilters = [ExceptionsFilter.AllExceptions]
         };
     }
 

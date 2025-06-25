@@ -72,7 +72,7 @@ public class DebugOptions
     /// <summary>
     ///     Gets or sets the symbol search paths.
     /// </summary>
-    public List<string> SymbolSearchPaths { get; set; } = new();
+    public List<string> SymbolSearchPaths { get; set; } = [];
 
     /// <summary>
     ///     Gets or sets the source code mappings.

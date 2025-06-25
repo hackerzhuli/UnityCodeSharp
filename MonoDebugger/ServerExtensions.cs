@@ -275,8 +275,8 @@ public static class ServerExtensions
     {
         return new DebugProtocol.GotoTargetsResponse
         {
-            Targets = new List<DebugProtocol.GotoTarget>
-            {
+            Targets =
+            [
                 new()
                 {
                     Id = id,
@@ -286,7 +286,7 @@ public static class ServerExtensions
                     EndLine = 0,
                     EndColumn = 0
                 }
-            }
+            ]
         };
     }
 
@@ -323,7 +323,7 @@ public static class ServerExtensions
             Message = exception.Message,
             InnerException = innerExceptions.Select(it => it.ToExceptionDetails()).ToList(),
             StackTrace = string.Join('\n',
-                exception.StackTrace?.Select(it => it.ToStackTraceLine()) ?? Array.Empty<string>())
+                exception.StackTrace?.Select(it => it.ToStackTraceLine()) ?? [])
         };
     }
 

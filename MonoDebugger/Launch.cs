@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Reflection;
 using System.Text.Json;
@@ -11,8 +12,8 @@ namespace MonoDebugger;
 /// </summary>
 public class Launch
 {
-    private readonly ExternalTypeResolver typeResolver;
-    private SoftDebuggerStartInfo? startInformation;
+    private readonly ExternalTypeResolver _typeResolver;
+    private SoftDebuggerStartInfo? _startInformation;
 
     /// <summary>
     ///     Initializes a new instance of the UnityDebugLaunchAgent class.
@@ -20,20 +21,20 @@ public class Launch
     /// <param name="config">The launch configuration</param>
     public Launch(LaunchConfig config)
     {
-        Disposables = new List<Action>();
+        Disposables = [];
         Config = config;
-        typeResolver = new ExternalTypeResolver(config.TransportId);
+        _typeResolver = new ExternalTypeResolver(config.TransportId);
     }
 
     /// <summary>
     ///     Gets the list of disposable actions to be called when disposing.
     /// </summary>
-    protected List<Action> Disposables { get; init; }
+    private List<Action> Disposables { get; init; }
 
     /// <summary>
     ///     Gets the launch configuration.
     /// </summary>
-    protected LaunchConfig Config { get; init; }
+    private LaunchConfig Config { get; init; }
 
     /// <summary>
     ///     Prepares the debug session for Unity debugging.
@@ -45,10 +46,10 @@ public class Launch
         debugSession.OnOutputDataReceived($"Attaching to Unity({editorInstance.ProcessId}) - {editorInstance.Version}");
 
         var port = Config.ProcessId != 0 ? Config.ProcessId : 56000 + editorInstance.ProcessId % 1000;
-        var applicationName = Path.GetFileName(Config.CurrentDirectory);
-        startInformation =
-            new SoftDebuggerStartInfo(new SoftDebuggerConnectArgs(applicationName, IPAddress.Loopback, port));
-        SetAssemblies(startInformation);
+        var appName = Path.GetFileName(Config.CurrentDirectory);
+        _startInformation =
+            new SoftDebuggerStartInfo(new SoftDebuggerConnectArgs(appName, IPAddress.Loopback, port));
+        SetAssemblies(_startInformation);
     }
 
     /// <summary>
@@ -57,11 +58,11 @@ public class Launch
     /// <param name="session">The debugger session to connect</param>
     public void Connect(SoftDebuggerSession session)
     {
-        session.Run(startInformation, Config.DebuggerSessionOptions.Options);
-        if (typeResolver.TryConnect())
+        session.Run(_startInformation, Config.DebuggerSessionOptions.Options);
+        if (_typeResolver.TryConnect())
         {
-            Disposables.Add(() => typeResolver.Dispose());
-            session.TypeResolverHandler = typeResolver.Resolve;
+            Disposables.Add(() => _typeResolver.Dispose());
+            session.TypeResolverHandler = _typeResolver.Resolve;
         }
     }
 
@@ -69,7 +70,7 @@ public class Launch
     ///     Gets the user assemblies for debugging.
     /// </summary>
     /// <returns>An enumerable of user assembly paths</returns>
-    public IEnumerable<string> GetUserAssemblies()
+    private IEnumerable<string> GetUserAssemblies()
     {
         if (Config.UserAssemblies != null && Config.UserAssemblies.Count > 0)
             return Config.UserAssemblies;
@@ -77,7 +78,7 @@ public class Launch
         var projectAssemblyPath =
             Path.Combine(Config.CurrentDirectory, "Library", "ScriptAssemblies", "Assembly-CSharp.dll");
         if (File.Exists(projectAssemblyPath))
-            return new[] { projectAssemblyPath };
+            return [projectAssemblyPath];
 
         var projectFilePaths = Directory.GetFiles(Config.CurrentDirectory, "*.csproj", SearchOption.TopDirectoryOnly);
         if (projectFilePaths.Length == 1)
@@ -87,12 +88,12 @@ public class Launch
             projectAssemblyPath = Path.Combine(Config.CurrentDirectory, "Library", "ScriptAssemblies",
                 $"{assemblyName}.dll");
             if (File.Exists(projectAssemblyPath))
-                return new[] { projectAssemblyPath };
+                return [projectAssemblyPath];
         }
 
         Debug.LogError(
             $"Could not find user assembly '{projectAssemblyPath}'. Specify 'userAssemblies' property in the launch configuration to override this behavior.");
-        return Enumerable.Empty<string>();
+        return [];
     }
 
     /// <summary>
@@ -118,7 +119,7 @@ public class Launch
     ///     Sets up assemblies for the debugger start info.
     /// </summary>
     /// <param name="startInfo">The debugger start info to configure</param>
-    protected void SetAssemblies(SoftDebuggerStartInfo startInfo)
+    private void SetAssemblies(SoftDebuggerStartInfo startInfo)
     {
         var options = Config.DebuggerSessionOptions;
         var useSymbolServers = options.SearchMicrosoftSymbolServer || options.SearchNuGetSymbolServer;
@@ -174,6 +175,7 @@ public class Launch
     /// <returns>The editor instance information</returns>
     private EditorInstance GetEditorInstance()
     {
+        // this is a file that Unity Editor will write to when it opens a project
         var editorInfo = Path.Combine(Config.CurrentDirectory, "Library", "EditorInstance.json");
         if (!File.Exists(editorInfo))
             throw ServerExtensions.GetProtocolException($"EditorInstance.json not found: '{editorInfo}'");
@@ -185,12 +187,9 @@ public class Launch
         }
         catch (Exception e)
         {
-            Debug.LogError(e.Message);
-            editorInstance = null;
+            Debug.LogError($"Failed to read EditorInstance.json: '{editorInfo}' - {e.Message}");
+            throw ServerExtensions.GetProtocolException($"Failed to read EditorInstance.json: '{editorInfo}'");
         }
-
-        if (editorInstance == null)
-            throw ServerExtensions.GetProtocolException($"Failed to deserialize EditorInstance.json: '{editorInfo}'");
 
         return editorInstance;
     }

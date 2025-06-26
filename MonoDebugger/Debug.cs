@@ -10,6 +10,8 @@ public static class Debug
 
     private static readonly object LockObject = new();
 
+    private static int _logCount = 0;
+
     static Debug()
     {
         // Ensure the directory exists
@@ -60,9 +62,17 @@ public static class Debug
         {
             lock (LockObject)
             {
+                _logCount++;
                 var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
                 var logEntry = $"[{timestamp}] [{level}] {message}{Environment.NewLine}";
-                File.AppendAllText(LogFilePath, logEntry);
+                if (_logCount == 1)
+                {
+                    File.WriteAllText(LogFilePath, logEntry);
+                }
+                else
+                {
+                    File.AppendAllText(LogFilePath, logEntry);
+                }
             }
         }
         catch

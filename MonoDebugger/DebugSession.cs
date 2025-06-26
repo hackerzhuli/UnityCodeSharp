@@ -25,6 +25,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
     /// <param name="output">Output stream for protocol communication</param>
     public DebugSession(Stream input, Stream output)
     {
+        Debug.Log("[DebugSession] Initializing new debug session");
         InitializeProtocolClient(input, output);
 
         _session.LogWriter = OnSessionLog;
@@ -41,6 +42,7 @@ public class DebugSession : DebugAdapterBase, IDisposable
         _session.TargetThreadStopped += TargetThreadStopped;
         _session.AssemblyLoaded += AssemblyLoaded;
         _session.Breakpoints.BreakpointStatusChanged += BreakpointStatusChanged;
+        Debug.Log("[DebugSession] Debug session initialized successfully");
     }
 
     public DebugOptions? Options { get; set; }
@@ -52,9 +54,12 @@ public class DebugSession : DebugAdapterBase, IDisposable
     /// </summary>
     public void Start()
     {
+        Debug.Log("[DebugSession] Starting debug session protocol communication");
         Protocol.LogMessage += LogMessage;
         Protocol.DispatcherError += LogError;
+        Debug.Log("[DebugSession] Protocol event handlers attached, starting protocol run");
         Protocol.Run();
+        Debug.Log("[DebugSession] Protocol.Run() completed");
     }
 
     /// <summary>
@@ -90,7 +95,11 @@ public class DebugSession : DebugAdapterBase, IDisposable
     /// <param name="ex">The unhandled exception</param>
     private void OnUnhandledException(Exception ex)
     {
+        Debug.LogError($"[DebugSession] Unhandled exception occurred: {ex.Message}", ex);
+        Debug.Log($"[DebugSession] Session state - IsRunning: {_session.IsRunning}, HasExited: {_session.HasExited}");
+        Debug.Log("[DebugSession] Disposing launch due to unhandled exception");
         _launch?.Dispose();
+        Debug.Log("[DebugSession] Launch disposed after unhandled exception");
     }
 
     private void SendMessageEvent(DebugProtocol.OutputEvent.CategoryValue category, string message)
@@ -103,12 +112,17 @@ public class DebugSession : DebugAdapterBase, IDisposable
 
     private void LogMessage(object? sender, LogEventArgs args)
     {
-        Debug.Log(args.Message);
+        // There are too many messages, don't log
+        // Debug.Log(args.Message);
     }
 
     private void LogError(object? sender, DispatcherErrorEventArgs args)
     {
+        Debug.LogError($"[DebugSession] Protocol dispatcher error occurred: {args.Exception.Message}", args.Exception);
+        Debug.Log($"[DebugSession] Dispatcher error sender: {sender?.GetType().Name ?? "null"}");
+        Debug.Log($"[DebugSession] Session state before handling dispatcher error - IsRunning: {_session.IsRunning}, HasExited: {_session.HasExited}");
         Debug.LogError($"[Fatal] {args.Exception.Message}", args.Exception);
+        Debug.Log("[DebugSession] Calling OnUnhandledException due to dispatcher error");
         OnUnhandledException(args.Exception);
     }
 
@@ -138,15 +152,31 @@ public class DebugSession : DebugAdapterBase, IDisposable
     {
         try
         {
+            Debug.Log("[DebugSession] HandleAttachRequest started");
+            Debug.Log($"[DebugSession] Configuration properties count: {arguments.ConfigurationProperties?.Count ?? 0}");
+            
             var configuration = new LaunchConfig(arguments.ConfigurationProperties);
+            Debug.Log("[DebugSession] LaunchConfig created successfully");
+            
             _symbolServer.SetEventLogger(OnDebugDataReceived);
+            Debug.Log("[DebugSession] Symbol server event logger set");
+            
             _launch = configuration.GetLaunchAgent();
+            Debug.Log($"[DebugSession] Launch agent created: {_launch?.GetType().Name ?? "null"}");
+            
             _launch.Init(this);
+            Debug.Log("[DebugSession] Launch agent initialized");
+            
+            Debug.Log($"[DebugSession] Session state before connect - IsRunning: {_session.IsRunning}, HasExited: {_session.HasExited}");
             _launch.Connect(_session);
+            Debug.Log($"[DebugSession] Session state after connect - IsRunning: {_session.IsRunning}, HasExited: {_session.HasExited}");
+            
+            Debug.Log("[DebugSession] HandleAttachRequest completed successfully");
             return new DebugProtocol.AttachResponse();
         }
         catch (Exception ex)
         {
+            Debug.LogError($"[DebugSession] HandleAttachRequest failed: {ex.Message}", ex);
             throw CreateException(ex);
         }
     }
@@ -162,9 +192,22 @@ public class DebugSession : DebugAdapterBase, IDisposable
     protected override DebugProtocol.DisconnectResponse HandleDisconnectRequest(
         DebugProtocol.DisconnectArguments arguments)
     {
+        Debug.Log("[DebugSession] HandleDisconnectRequest started");
+        Debug.Log($"[DebugSession] Session state before disconnect - IsRunning: {_session.IsRunning}, HasExited: {_session.HasExited}");
+        
+        Debug.Log("[DebugSession] Detaching session");
         _session.Detach();
+        Debug.Log("[DebugSession] Session detached");
+        
+        Debug.Log("[DebugSession] Disposing session");
         _session.Dispose();
+        Debug.Log("[DebugSession] Session disposed");
+        
+        Debug.Log("[DebugSession] Disposing launch");
         _launch?.Dispose();
+        Debug.Log("[DebugSession] Launch disposed");
+        
+        Debug.Log("[DebugSession] HandleDisconnectRequest completed");
         return new DebugProtocol.DisconnectResponse();
     }
 
@@ -172,12 +215,22 @@ public class DebugSession : DebugAdapterBase, IDisposable
     {
         try
         {
+            Debug.Log($"[DebugSession] HandleContinueRequest - Session state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
             if (_session is { IsRunning: false, HasExited: false })
+            {
+                Debug.Log("[DebugSession] Calling session.Continue()");
                 _session.Continue();
+                Debug.Log($"[DebugSession] Session.Continue() completed - New state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
+            }
+            else
+            {
+                Debug.LogWarning($"[DebugSession] Continue request ignored - Session state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
+            }
             return new DebugProtocol.ContinueResponse();
         }
         catch (Exception ex)
         {
+            Debug.LogError($"[DebugSession] HandleContinueRequest failed: {ex.Message}", ex);
             throw CreateException(ex);
         }
     }
@@ -186,12 +239,22 @@ public class DebugSession : DebugAdapterBase, IDisposable
     {
         try
         {
+            Debug.Log($"[DebugSession] HandleNextRequest - Session state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
             if (!_session.IsRunning && !_session.HasExited)
+            {
+                Debug.Log("[DebugSession] Calling session.NextLine()");
                 _session.NextLine();
+                Debug.Log($"[DebugSession] Session.NextLine() completed - New state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
+            }
+            else
+            {
+                Debug.LogWarning($"[DebugSession] NextLine request ignored - Session state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
+            }
             return new DebugProtocol.NextResponse();
         }
         catch (Exception ex)
         {
+            Debug.LogError($"[DebugSession] HandleNextRequest failed: {ex.Message}", ex);
             throw CreateException(ex);
         }
     }
@@ -200,12 +263,22 @@ public class DebugSession : DebugAdapterBase, IDisposable
     {
         try
         {
+            Debug.Log($"[DebugSession] HandleStepInRequest - Session state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
             if (!_session.IsRunning && !_session.HasExited)
+            {
+                Debug.Log("[DebugSession] Calling session.StepLine()");
                 _session.StepLine();
+                Debug.Log($"[DebugSession] Session.StepLine() completed - New state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
+            }
+            else
+            {
+                Debug.LogWarning($"[DebugSession] StepLine request ignored - Session state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
+            }
             return new DebugProtocol.StepInResponse();
         }
         catch (Exception ex)
         {
+            Debug.LogError($"[DebugSession] HandleStepInRequest failed: {ex.Message}", ex);
             throw CreateException(ex);
         }
     }
@@ -214,12 +287,22 @@ public class DebugSession : DebugAdapterBase, IDisposable
     {
         try
         {
+            Debug.Log($"[DebugSession] HandleStepOutRequest - Session state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
             if (!_session.IsRunning && !_session.HasExited)
+            {
+                Debug.Log("[DebugSession] Calling session.Finish()");
                 _session.Finish();
+                Debug.Log($"[DebugSession] Session.Finish() completed - New state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
+            }
+            else
+            {
+                Debug.LogWarning($"[DebugSession] Finish request ignored - Session state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
+            }
             return new DebugProtocol.StepOutResponse();
         }
         catch (Exception ex)
         {
+            Debug.LogError($"[DebugSession] HandleStepOutRequest failed: {ex.Message}", ex);
             throw CreateException(ex);
         }
     }
@@ -228,12 +311,22 @@ public class DebugSession : DebugAdapterBase, IDisposable
     {
         try
         {
+            Debug.Log($"[DebugSession] HandlePauseRequest - Session state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
             if (_session.IsRunning)
+            {
+                Debug.Log("[DebugSession] Calling session.Stop()");
                 _session.Stop();
+                Debug.Log($"[DebugSession] Session.Stop() completed - New state: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
+            }
+            else
+            {
+                Debug.LogWarning($"[DebugSession] Stop request ignored - Session not running: IsRunning={_session.IsRunning}, HasExited={_session.HasExited}");
+            }
             return new DebugProtocol.PauseResponse();
         }
         catch (Exception ex)
         {
+            Debug.LogError($"[DebugSession] HandlePauseRequest failed: {ex.Message}", ex);
             throw CreateException(ex);
         }
     }
@@ -672,35 +765,97 @@ public class DebugSession : DebugAdapterBase, IDisposable
 
     private void TargetStopped(object? sender, MonoClient.TargetEventArgs e)
     {
+        Debug.Log($"[DebugSession] TargetStopped event fired - ThreadId: {e.Thread.Id}, ThreadName: {e.Thread.Name}");
+        Debug.Log($"[DebugSession] Session state in TargetStopped - IsRunning: {_session.IsRunning}, HasExited: {_session.HasExited}");
+        
+        Debug.Log("[DebugSession] Resetting handles due to target stopped");
         ResetHandles();
+        
+        Debug.Log("[DebugSession] Sending StoppedEvent with Pause reason");
         Protocol.SendEvent(new DebugProtocol.StoppedEvent(DebugProtocol.StoppedEvent.ReasonValue.Pause)
         {
             ThreadId = (int)e.Thread.Id,
             AllThreadsStopped = true
         });
+        Debug.Log("[DebugSession] TargetStopped event handling completed");
     }
 
     private void TargetHitBreakpoint(object? sender, MonoClient.TargetEventArgs e)
     {
-        ResetHandles();
-        Protocol.SendEvent(new DebugProtocol.StoppedEvent(DebugProtocol.StoppedEvent.ReasonValue.Breakpoint)
+        Debug.Log($"[DebugSession] TargetHitBreakpoint event fired - ThreadId: {e.Thread.Id}, ThreadName: {e.Thread.Name}");
+        Debug.Log($"[DebugSession] Session state in TargetHitBreakpoint - IsRunning: {_session.IsRunning}, HasExited: {_session.HasExited}");
+        
+        try
         {
-            ThreadId = (int)e.Thread.Id,
-            AllThreadsStopped = true
-        });
+            var backtrace = e.Thread.Backtrace;
+            if (backtrace != null && backtrace.FrameCount > 0)
+            {
+                var frame = backtrace.GetFrame(0);
+                Debug.Log($"[DebugSession] Breakpoint hit at: {frame?.SourceLocation?.FileName}:{frame?.SourceLocation?.Line}");
+                Debug.Log($"[DebugSession] Method: {frame?.FullTypeName}");
+            }
+            else
+            {
+                Debug.LogWarning("[DebugSession] No backtrace available for breakpoint hit");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[DebugSession] Error getting breakpoint location info: {ex.Message}", ex);
+        }
+        
+        Debug.Log("[DebugSession] Resetting handles due to breakpoint hit");
+        ResetHandles();
+        
+        Debug.Log("[DebugSession] Sending StoppedEvent with Breakpoint reason");
+        try
+        {
+            Protocol.SendEvent(new DebugProtocol.StoppedEvent(DebugProtocol.StoppedEvent.ReasonValue.Breakpoint)
+            {
+                ThreadId = (int)e.Thread.Id,
+                AllThreadsStopped = true
+            });
+            Debug.Log("[DebugSession] StoppedEvent sent successfully");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[DebugSession] Error sending StoppedEvent: {ex.Message}", ex);
+            throw;
+        }
+        
+        Debug.Log("[DebugSession] TargetHitBreakpoint event handling completed");
     }
 
     private void TargetExceptionThrown(object? sender, MonoClient.TargetEventArgs e)
     {
+        Debug.Log($"[DebugSession] TargetExceptionThrown event fired - ThreadId: {e.Thread.Id}, ThreadName: {e.Thread.Name}");
+        Debug.Log($"[DebugSession] Session state in TargetExceptionThrown - IsRunning: {_session.IsRunning}, HasExited: {_session.HasExited}");
+        
+        Debug.Log("[DebugSession] Resetting handles due to exception");
         ResetHandles();
-        var ex = _session.FindException(e.Thread.Id);
-        Protocol.SendEvent(new DebugProtocol.StoppedEvent(DebugProtocol.StoppedEvent.ReasonValue.Exception)
+        
+        try
         {
-            Description = "Paused on exception",
-            Text = ex?.Type ?? "Exception",
-            ThreadId = (int)e.Thread.Id,
-            AllThreadsStopped = true
-        });
+            var ex = _session.FindException(e.Thread.Id);
+            Debug.Log($"[DebugSession] Exception found: Type={ex?.Type ?? "Unknown"}, Message={ex?.Message ?? "No message"}");
+            
+            Debug.Log("[DebugSession] Sending StoppedEvent with Exception reason");
+            Protocol.SendEvent(new DebugProtocol.StoppedEvent(DebugProtocol.StoppedEvent.ReasonValue.Exception)
+            {
+                Description = "Paused on exception",
+                Text = ex?.Type ?? "Exception",
+                ThreadId = (int)e.Thread.Id,
+                AllThreadsStopped = true
+            });
+            Debug.Log("[DebugSession] Exception StoppedEvent sent successfully");
+        }
+        catch (Exception findEx)
+        {
+            Debug.LogError($"[DebugSession] Error handling exception event: {findEx.Message}", findEx);
+            throw;
+        }
+        
+        Debug.Log("[DebugSession] TargetExceptionThrown event handling completed");
     }
 
     private void TargetReady(object? sender, MonoClient.TargetEventArgs e)
@@ -710,7 +865,31 @@ public class DebugSession : DebugAdapterBase, IDisposable
 
     private void TargetExited(object? sender, MonoClient.TargetEventArgs e)
     {
-        Protocol.SendEvent(new DebugProtocol.TerminatedEvent());
+        Debug.Log($"[DebugSession] TargetExited event fired - ThreadId: {e.Thread?.Id ?? 0}");
+        Debug.Log($"[DebugSession] Session state in TargetExited - IsRunning: {_session.IsRunning}, HasExited: {_session.HasExited}");
+        
+        try
+        {
+            var processes = _session.GetProcesses();
+            Debug.Log($"[DebugSession] Active processes count: {processes?.Length ?? 0}");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[DebugSession] Error getting process info in TargetExited: {ex.Message}", ex);
+        }
+        
+        Debug.Log("[DebugSession] Sending TerminatedEvent due to target exit");
+        try
+        {
+            Protocol.SendEvent(new DebugProtocol.TerminatedEvent());
+            Debug.Log("[DebugSession] TerminatedEvent sent successfully");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[DebugSession] Error sending TerminatedEvent: {ex.Message}", ex);
+        }
+        
+        Debug.Log("[DebugSession] TargetExited event handling completed");
     }
 
     private void TargetThreadStarted(object? sender, MonoClient.TargetEventArgs e)
@@ -739,7 +918,10 @@ public class DebugSession : DebugAdapterBase, IDisposable
 
     private bool OnExceptionHandled(Exception ex)
     {
+        Debug.LogError($"[DebugSession] OnExceptionHandled called: {ex.Message}", ex);
+        Debug.Log($"[DebugSession] Session state in OnExceptionHandled - IsRunning: {_session.IsRunning}, HasExited: {_session.HasExited}");
         MonoClient.DebuggerLoggingService.CustomLogger?.LogError($"[Handled] {ex.Message}", ex);
+        Debug.Log("[DebugSession] OnExceptionHandled returning true");
         return true;
     }
 
@@ -764,10 +946,12 @@ public class DebugSession : DebugAdapterBase, IDisposable
 
     private void ResetHandles()
     {
+        Debug.Log($"[DebugSession] ResetHandles called - Current handles: Frame={_frameHandles.Count}, Goto={_gotoHandles.Count}, Variable={_variableHandles.Count}, NextHandle={_nextHandle}");
         _frameHandles.Clear();
         _gotoHandles.Clear();
         _variableHandles.Clear();
         _nextHandle = 1000;
+        Debug.Log("[DebugSession] All handles reset successfully");
     }
 
     private DebugProtocol.Variable CreateVariable(MonoClient.ObjectValue v)
@@ -795,6 +979,19 @@ public class DebugSession : DebugAdapterBase, IDisposable
     /// </summary>
     public void Dispose()
     {
-        _symbolServer?.Dispose();
+        Debug.Log("[DebugSession] Dispose called - cleaning up resources");
+        Debug.Log($"[DebugSession] Final session state - IsRunning: {_session?.IsRunning ?? false}, HasExited: {_session?.HasExited ?? true}");
+        
+        try
+        {
+            _symbolServer?.Dispose();
+            Debug.Log("[DebugSession] Symbol server disposed successfully");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[DebugSession] Error disposing symbol server: {ex.Message}", ex);
+        }
+        
+        Debug.Log("[DebugSession] Dispose completed");
     }
 }

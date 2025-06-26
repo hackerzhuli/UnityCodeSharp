@@ -12,6 +12,8 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.VisualStudio.Shared.VSCodeDebugProtocol" Version="18.0.10427.1"/>
         <PackageReference Include="StreamJsonRpc" Version="2.22.11"/>
+        <!-- Even though Mono.Cecil is a dependency of Mono.Debugging.Soft, but it is private, so we have to include it here. -->
+        <PackageReference Include="Mono.Cecil" Version="0.11.6"/> 
         <TrimmerRootDescriptor Include="Trim.xml"/>
     </ItemGroup>
 

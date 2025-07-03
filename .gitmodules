@@ -4,3 +4,6 @@
 [submodule "DotRush"]
 	path = DotRush
 	url = git@github.com:hackerzhuli/DotRush.git
+[submodule "Microsoft.Unity.Analyzers"]
+	path = Microsoft.Unity.Analyzers
+	url = https://github.com/microsoft/Microsoft.Unity.Analyzers.git

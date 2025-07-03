@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mono.Debugger.Soft", "Mono\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotRush.Common", "DotRush\src\DotRush.Common\DotRush.Common.csproj", "{462EE407-DAEB-4965-8A84-BF2CAB1897C7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Microsoft.Unity.Analyzers", "Microsoft.Unity.Analyzers\src\Microsoft.Unity.Analyzers\Microsoft.Unity.Analyzers.csproj", "{CDA6C7C0-4878-4E4D-AF0C-19A812B5F804}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{462EE407-DAEB-4965-8A84-BF2CAB1897C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{462EE407-DAEB-4965-8A84-BF2CAB1897C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{462EE407-DAEB-4965-8A84-BF2CAB1897C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CDA6C7C0-4878-4E4D-AF0C-19A812B5F804}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDA6C7C0-4878-4E4D-AF0C-19A812B5F804}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDA6C7C0-4878-4E4D-AF0C-19A812B5F804}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDA6C7C0-4878-4E4D-AF0C-19A812B5F804}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

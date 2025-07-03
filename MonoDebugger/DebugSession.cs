@@ -586,10 +586,16 @@ public class DebugSession : DebugAdapterBase, IDisposable
             if (process == null)
                 return new DebugProtocol.ThreadsResponse();
 
-            foreach (var thread in process.GetThreads())
+            // order them according to id, this will make main thread appear first
+            foreach (var thread in process.GetThreads().OrderBy(t => t.Id))
             {
                 var tid = (int)thread.Id;
-                threads.Add(new DebugProtocol.Thread(tid, thread.Name.ToThreadName(tid)));
+                var threadName = thread.Name.ToThreadName(tid);
+                // Burst threads are editor related and won't run user code, as far as I know
+                if(threadName.StartsWith("Burst-")){
+                    continue;
+                }
+                threads.Add(new DebugProtocol.Thread(tid, threadName));
             }
 
             return new DebugProtocol.ThreadsResponse(threads);

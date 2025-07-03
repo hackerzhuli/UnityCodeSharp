@@ -104,6 +104,7 @@ public class Launch(LaunchConfig config)
         var assemblyPathMap = new Dictionary<string, string>();
         var assemblySymbolPathMap = new Dictionary<string, string>();
         var userAssemblyNames = new List<AssemblyName>();
+        
         try
         {
             foreach (var assemblyPath in GetAssemblies())
@@ -126,19 +127,28 @@ public class Launch(LaunchConfig config)
 
                 assemblySymbolPathMap.TryAdd(assemblyName.FullName, assemblySymbolsFilePath);
                 assemblyPathMap.TryAdd(assemblyName.FullName, assemblyPath);
-                if (!assemblyName.Name.StartsWith("Unity.") &&
-                    !assemblyName.Name.StartsWith("UnityEngine.") &&
-                    !assemblyName.Name.StartsWith("UnityEditor."))
+                
+                // Check if this is a user assembly by looking for corresponding .csproj file
+                var csprojPath = Path.Combine(Config.ProjectPath, $"{assemblyName.Name}.csproj");
+                var isUserAssembly = File.Exists(csprojPath);
+                
+                if (isUserAssembly)
                 {
                     userAssemblyNames.Add(assemblyName);
+                    Debug.Log($"User assembly '{assemblyName.Name}' added (found .csproj)");
                 }
-                Debug.Log($"Assembly '{assemblyName.Name}' added");
+                else
+                {
+                    Debug.Log($"System assembly '{assemblyName.Name}' added");
+                }
             }
         }
         catch (Exception e)
         {
             Debug.LogError($"Error while processing assemblies", e);
         }
+        
+        Debug.Log($"Total assemblies processed: {assemblyPathMap.Count}, User assemblies: {userAssemblyNames.Count}");
         startInfo.SymbolPathMap = assemblySymbolPathMap;
         startInfo.AssemblyPathMap = assemblyPathMap;
         startInfo.UserAssemblyNames = userAssemblyNames;
